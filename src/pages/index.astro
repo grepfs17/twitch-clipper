@@ -1,17 +1,194 @@
 ---
-
+import Layout from "../layouts/Layout.astro";
+import "../styles/index.css";
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Layout title="Twitch Clip Explorer">
+    <main>
+        <header class="hero">
+            <div class="container">
+                <h1 class="font-display">
+                    Twitch <span class="accent">Clip Explorer</span>
+                </h1>
+
+                <div class="search-wrapper">
+                    <div class="search-box">
+                        <svg
+                            class="search-icon"
+                            viewBox="0 0 24 24"
+                            width="20"
+                            height="20"
+                            ><path
+                                fill="currentColor"
+                                d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+                            ></path></svg
+                        >
+                        <input
+                            type="text"
+                            id="channelInput"
+                            placeholder="Enter channel name (e.g. lunateac)"
+                            spellcheck="false"
+                            autocomplete="off"
+                        />
+                        <button id="searchBtn" class="btn-primary"
+                            >Explore</button
+                        >
+                    </div>
+                    <div id="recentSearches" class="recent-searches hidden">
+                        <span class="recent-label">Recent searches</span>
+                        <ul id="recentList" class="recent-list"></ul>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <section id="resultsSection" class="results-section hidden">
+            <div class="container">
+                <div class="toolbar">
+                    <div class="filters-group">
+                        <div class="filter-item">
+                            <label>Popularity</label>
+                            <div class="custom-select">
+                                <button
+                                    type="button"
+                                    class="custom-select-trigger"
+                                    id="rangeFilterTrigger">All Time</button
+                                >
+                                <input
+                                    type="hidden"
+                                    id="rangeFilter"
+                                    value="all"
+                                />
+                                <ul
+                                    class="custom-select-options"
+                                    id="rangeFilterOptions"
+                                >
+                                    <li data-value="all">All Time</li>
+                                    <li data-value="24h">Last 24 Hours</li>
+                                    <li data-value="7d">Last 7 Days</li>
+                                    <li data-value="30d">Last 30 Days</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="filter-item">
+                            <label>Category</label>
+                            <div class="autocomplete-wrapper">
+                                <input
+                                    type="text"
+                                    id="categoryInput"
+                                    placeholder="All Categories"
+                                    autocomplete="off"
+                                />
+                                <button
+                                    type="button"
+                                    id="categoryClear"
+                                    class="autocomplete-clear hidden"
+                                    aria-label="Clear category">&times;</button
+                                >
+                                <input
+                                    type="hidden"
+                                    id="categoryFilter"
+                                    value="all"
+                                />
+                                <ul id="categoryList" class="autocomplete-list">
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="filter-item">
+                            <label>Sort By</label>
+                            <div class="custom-select">
+                                <button
+                                    type="button"
+                                    class="custom-select-trigger"
+                                    id="sortFilterTrigger">Most Views</button
+                                >
+                                <input
+                                    type="hidden"
+                                    id="sortFilter"
+                                    value="views"
+                                />
+                                <ul
+                                    class="custom-select-options"
+                                    id="sortFilterOptions"
+                                >
+                                    <li data-value="views">Most Views</li>
+                                    <li data-value="latest">Latest</li>
+                                    <li data-value="oldest">Oldest</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stats">
+                        <span id="clipsCount">0</span> clips found
+                    </div>
+                </div>
+
+                <div id="clipsGrid" class="clips-grid">
+                    <!-- Clips will be injected here -->
+                </div>
+
+                <div id="loader" class="loader hidden">
+                    <div class="spinner"></div>
+                    <span id="loaderText" class="loader-text"></span>
+                </div>
+
+                <div id="emptyState" class="empty-state hidden">
+                    <p>No clips found for this criteria.</p>
+                </div>
+
+            </div>
+        </section>
+
+        <footer class="footer">
+            <div class="container">
+                <p>© 2024 Twitch Clip Explorer • Built with Astro</p>
+            </div>
+        </footer>
+    </main>
+
+    <div id="clipModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <button
+                type="button"
+                id="modalCloseBtn"
+                class="modal-close"
+                aria-label="Close">&times;</button
+            >
+            <div class="modal-video-wrapper">
+                <iframe id="modalIframe" src="" frameborder="0" allowfullscreen
+                ></iframe>
+            </div>
+            <div class="modal-body">
+                <h2 id="modalTitle" class="modal-title"></h2>
+                <div class="modal-meta">
+                    <span id="modalGame" class="modal-game"></span>
+                    <span class="meta-dot"></span>
+                    <span id="modalDate" class="modal-date"></span>
+                </div>
+                <button
+                    type="button"
+                    id="modalCopyBtn"
+                    class="btn-primary copy-btn"
+                >
+                    <svg
+                        viewBox="0 0 24 24"
+                        width="16"
+                        height="16"
+                        fill="currentColor"
+                        ><path
+                            d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"
+                        ></path></svg
+                    >
+                    Copy Clip Link
+                </button>
+            </div>
+        </div>
+    </div>
+</Layout>
+
+<script>
+    import "../scripts/index";
+</script>

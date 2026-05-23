@@ -1,0 +1,38 @@
+export const elements = {
+    channelInput: document.getElementById(
+        "channelInput",
+    ) as HTMLInputElement,
+    searchBtn: document.getElementById("searchBtn"),
+    resultsSection: document.getElementById("resultsSection"),
+    clipsGrid: document.getElementById("clipsGrid"),
+    rangeFilter: document.getElementById(
+        "rangeFilter",
+    ) as HTMLInputElement,
+    categoryFilter: document.getElementById(
+        "categoryFilter",
+    ) as HTMLInputElement,
+    categoryInput: document.getElementById(
+        "categoryInput",
+    ) as HTMLInputElement,
+    categoryList: document.getElementById(
+        "categoryList",
+    ) as HTMLUListElement,
+    categoryClear: document.getElementById(
+        "categoryClear",
+    ) as HTMLButtonElement,
+    sortFilter: document.getElementById("sortFilter") as HTMLInputElement,
+    clipsCount: document.getElementById("clipsCount"),
+    loader: document.getElementById("loader"),
+    loaderText: document.getElementById("loaderText"),
+    emptyState: document.getElementById("emptyState"),
+    recentSearches: document.getElementById("recentSearches"),
+    recentList: document.getElementById("recentList") as HTMLUListElement,
+
+    modal: document.getElementById("clipModal"),
+    modalTitle: document.getElementById("modalTitle"),
+    modalGame: document.getElementById("modalGame"),
+    modalDate: document.getElementById("modalDate"),
+    modalIframe: document.getElementById("modalIframe") as HTMLIFrameElement,
+    modalCloseBtn: document.getElementById("modalCloseBtn"),
+    modalCopyBtn: document.getElementById("modalCopyBtn") as HTMLButtonElement,
+};
