@@ -80,30 +80,31 @@ function buildWindows(range: string): TimeWindow[] {
 // ── Cache indicator ───────────────────────────────────────────────────────────
 
 function showCacheIndicator(savedAt: string) {
-    if (!elements.cacheIndicator || !elements.cacheText) return;
+  if (!elements.cacheIndicator || !elements.cacheText) return;
 
-    const date = new Date(savedAt);
-    const age = Math.round((Date.now() - date.getTime()) / 1000 / 60);
-    const ageLabel = age < 60
-        ? `${age}m ago`
-        : age < 1440
-            ? `${Math.round(age / 60)}h ago`
-            : `${Math.round(age / 1440)}d ago`;
+  const date = new Date(savedAt);
+  const age = Math.round((Date.now() - date.getTime()) / 1000 / 60);
+  const ageLabel =
+    age < 60
+      ? `${age}m ago`
+      : age < 1440
+        ? `${Math.round(age / 60)}h ago`
+        : `${Math.round(age / 1440)}d ago`;
 
-    const formatted = date.toLocaleDateString(undefined, {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-    });
+  const formatted = date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
-    elements.cacheText.textContent = `Loaded from cache (${allClips.length.toLocaleString()} clips, saved ${ageLabel} — ${formatted})`;
-    elements.cacheIndicator.classList.remove("hidden");
+  elements.cacheText.textContent = `Loaded from cache (${allClips.length.toLocaleString()} clips, saved ${ageLabel} — ${formatted})`;
+  elements.cacheIndicator.classList.remove("hidden");
 }
 
 function hideCacheIndicator() {
-    elements.cacheIndicator?.classList.add("hidden");
+  elements.cacheIndicator?.classList.add("hidden");
 }
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -300,9 +301,9 @@ async function handleSearch() {
   setAllClips([]);
   setDisplayedClips([]);
 
-    elements.resultsSection?.classList.remove("hidden");
-    hideCacheIndicator();
-    if (elements.clipsGrid) elements.clipsGrid.innerHTML = "";
+  elements.resultsSection?.classList.remove("hidden");
+  hideCacheIndicator();
+  if (elements.clipsGrid) elements.clipsGrid.innerHTML = "";
   elements.loader?.classList.remove("hidden");
   elements.emptyState?.classList.add("hidden");
   if (elements.loaderText) elements.loaderText.textContent = "";
@@ -331,16 +332,16 @@ async function handleSearch() {
         "FETCH FRESH",
       );
 
-            if (useCached) {
-                addRecent(channel);
-                setAllClips(cached.clips);
-                showCacheIndicator(cached.savedAt);
-                updateCategories();
-                applyFilters();
-                // No pending windows — full library is already loaded
-                syncLoadAllBtn();
-                return;
-            }
+      if (useCached) {
+        addRecent(channel);
+        setAllClips(cached.clips);
+        showCacheIndicator(cached.savedAt);
+        updateCategories();
+        applyFilters();
+        // No pending windows — full library is already loaded
+        syncLoadAllBtn();
+        return;
+      }
 
       // User chose fresh — re-show loader
       elements.loader?.classList.remove("hidden");
@@ -398,53 +399,66 @@ export function initSearch() {
   elements.rangeFilter?.addEventListener("change", handleSearch);
   elements.sortFilter?.addEventListener("change", applyFilters);
 
-    elements.loadOlderBtn?.addEventListener("click", loadAllClips);
+  elements.loadOlderBtn?.addEventListener("click", async () => {
+    const ok = await terminalConfirm(
+      "Load all clips? This may take a long time depending on how many clips the channel has.",
+    );
+    if (ok) loadAllClips();
+  });
 
-    elements.cacheRefresh?.addEventListener("click", async () => {
-        if (!currentChannel) return;
-        hideCacheIndicator();
-        elements.loader?.classList.remove("hidden");
-        if (elements.loaderText) elements.loaderText.textContent = "Refreshing clips...";
-        elements.emptyState?.classList.add("hidden");
+  elements.cacheRefresh?.addEventListener("click", async () => {
+    if (!currentChannel) return;
+    hideCacheIndicator();
+    elements.loader?.classList.remove("hidden");
+    if (elements.loaderText)
+      elements.loaderText.textContent = "Refreshing clips...";
+    elements.emptyState?.classList.add("hidden");
 
-        try {
-            await clearCache(currentChannel);
-        } catch { /* ignore */ }
+    try {
+      await clearCache(currentChannel);
+    } catch {
+      /* ignore */
+    }
 
-        setAllClips([]);
-        setDisplayedClips([]);
-        if (elements.clipsGrid) elements.clipsGrid.innerHTML = "";
+    setAllClips([]);
+    setDisplayedClips([]);
+    if (elements.clipsGrid) elements.clipsGrid.innerHTML = "";
 
-        const range = elements.rangeFilter?.value || "all";
+    const range = elements.rangeFilter?.value || "all";
 
-        if (range === "all") {
-            const firstBatch = await fetchTopClips(currentChannel, (n) => {
-                if (elements.loaderText) {
-                    elements.loaderText.textContent = `Loading top clips... ${n}`;
-                }
-            });
-            pendingWindows = buildWindows("all");
-            addRecent(currentChannel);
-            setAllClips(firstBatch);
-            updateCategories();
-            applyFilters();
-            syncLoadAllBtn();
-        } else {
-            const windows = buildWindows(range);
-            const firstBatch = await fetchWindow(currentChannel, range, windows[0], (n) => {
-                if (elements.loaderText) {
-                    elements.loaderText.textContent = `Loading... ${n} clips`;
-                }
-            });
-            pendingWindows = windows.slice(1);
-            addRecent(currentChannel);
-            setAllClips(firstBatch);
-            updateCategories();
-            applyFilters();
-            syncLoadAllBtn();
+    if (range === "all") {
+      const firstBatch = await fetchTopClips(currentChannel, (n) => {
+        if (elements.loaderText) {
+          elements.loaderText.textContent = `Loading top clips... ${n}`;
         }
+      });
+      pendingWindows = buildWindows("all");
+      addRecent(currentChannel);
+      setAllClips(firstBatch);
+      updateCategories();
+      applyFilters();
+      syncLoadAllBtn();
+    } else {
+      const windows = buildWindows(range);
+      const firstBatch = await fetchWindow(
+        currentChannel,
+        range,
+        windows[0],
+        (n) => {
+          if (elements.loaderText) {
+            elements.loaderText.textContent = `Loading... ${n} clips`;
+          }
+        },
+      );
+      pendingWindows = windows.slice(1);
+      addRecent(currentChannel);
+      setAllClips(firstBatch);
+      updateCategories();
+      applyFilters();
+      syncLoadAllBtn();
+    }
 
-        elements.loader?.classList.add("hidden");
-        if (elements.loaderText) elements.loaderText.textContent = "";
-    });
+    elements.loader?.classList.add("hidden");
+    if (elements.loaderText) elements.loaderText.textContent = "";
+  });
 }
