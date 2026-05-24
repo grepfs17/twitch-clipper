@@ -10,10 +10,7 @@ const { title } = Astro.props;
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <meta
-            name="description"
-            content="Twitch Clip Browser - Minimalist and Fast"
-        />
+        <meta name="description" content="Twitch Clip Browser" />
         <meta name="viewport" content="width=device-width" />
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <meta name="generator" content={Astro.generator} />
@@ -21,7 +18,7 @@ const { title } = Astro.props;
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link
-            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap"
+            href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap"
             rel="stylesheet"
         />
     </head>
@@ -32,21 +29,22 @@ const { title } = Astro.props;
 
 <style is:global>
     :root {
-        --bg-primary: #0a0a0c;
-        --bg-secondary: #16161a;
-        --bg-tertiary: #1f1f23;
-        --accent: #9146ff;
-        --accent-hover: #772ce8;
-        --text-primary: #f2f2f7;
-        --text-secondary: #a1a1aa;
-        --text-muted: #71717a;
-        --border: rgba(255, 255, 255, 0.08);
-        --radius-sm: 8px;
-        --radius-md: 12px;
-        --radius-lg: 20px;
-        --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        --font-main: "Inter", system-ui, -apple-system, sans-serif;
-        --font-display: "Outfit", sans-serif;
+        /* Amber phosphor palette */
+        --bg: #0c0900;
+        --bg-2: #130f00;
+        --bg-3: #1a1500;
+        --amber: #ffb000;
+        --amber-dim: #7a5200;
+        --amber-dark: #1f1400;
+        --amber-glow: rgba(255, 176, 0, 0.18);
+        --text: #d4922a;
+        --text-dim: #5a4010;
+        --text-bright: #ffd060;
+        --border: rgba(255, 176, 0, 0.22);
+        --border-active: rgba(255, 176, 0, 0.7);
+        --radius: 0;
+        --font-mono: "Share Tech Mono", "Consolas", monospace;
+        --font-display: "VT323", monospace;
     }
 
     * {
@@ -56,15 +54,50 @@ const { title } = Astro.props;
     }
 
     html {
-        background-color: var(--bg-primary);
-        color: var(--text-primary);
-        font-family: var(--font-main);
-        -webkit-font-smoothing: antialiased;
+        background-color: var(--bg);
+        color: var(--text);
+        font-family: var(--font-mono);
+        -webkit-font-smoothing: none;
+        -moz-osx-font-smoothing: unset;
         scrollbar-gutter: stable;
+        font-size: 15px;
+        line-height: 1.55;
     }
 
+    /* CRT scanline + vignette overlay on the whole page */
     body {
         min-height: 100vh;
+        position: relative;
+    }
+
+    body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 9999;
+        /* scanlines */
+        background: repeating-linear-gradient(
+            0deg,
+            rgba(0, 0, 0, 0.18) 0px,
+            rgba(0, 0, 0, 0.18) 1px,
+            transparent 1px,
+            transparent 3px
+        );
+    }
+
+    body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 9999;
+        /* vignette */
+        background: radial-gradient(
+            ellipse at center,
+            transparent 55%,
+            rgba(0, 0, 0, 0.55) 100%
+        );
     }
 
     a {
@@ -86,27 +119,31 @@ const { title } = Astro.props;
         font-size: 1rem;
     }
 
-    /* Custom Scrollbar */
+    ::selection {
+        background: var(--amber-dark);
+        color: var(--amber);
+    }
+
     ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
+        width: 6px;
+        height: 6px;
     }
 
     ::-webkit-scrollbar-track {
-        background: var(--bg-primary);
+        background: var(--bg);
     }
 
     ::-webkit-scrollbar-thumb {
-        background: var(--bg-tertiary);
-        border-radius: 4px;
+        background: var(--amber-dim);
+        border-radius: 0;
     }
 
     ::-webkit-scrollbar-thumb:hover {
-        background: var(--text-muted);
+        background: var(--amber);
     }
 
     .container {
-        max-width: 1400px;
+        max-width: 1280px;
         margin: 0 auto;
         padding: 0 2rem;
     }

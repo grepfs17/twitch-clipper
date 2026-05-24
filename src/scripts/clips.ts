@@ -7,6 +7,12 @@ export let displayedClips: any[] = [];
 export function setAllClips(val: any[]) { allClips = val; }
 export function setDisplayedClips(val: any[]) { displayedClips = val; }
 
+export function appendClips(newClips: any[]) {
+    const existingIds = new Set(allClips.map((c) => c.id));
+    const unique = newClips.filter((c) => !existingIds.has(c.id));
+    setAllClips([...allClips, ...unique]);
+}
+
 export function renderClips() {
     if (!elements.clipsGrid) return;
     elements.clipsGrid.innerHTML = "";

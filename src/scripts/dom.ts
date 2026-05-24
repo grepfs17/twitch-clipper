@@ -27,6 +27,7 @@ export const elements = {
     emptyState: document.getElementById("emptyState"),
     recentSearches: document.getElementById("recentSearches"),
     recentList: document.getElementById("recentList") as HTMLUListElement,
+    loadOlderBtn: document.getElementById("loadOlderBtn") as HTMLButtonElement,
 
     modal: document.getElementById("clipModal"),
     modalTitle: document.getElementById("modalTitle"),

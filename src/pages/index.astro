@@ -7,36 +7,35 @@ import "../styles/index.css";
     <main>
         <header class="hero">
             <div class="container">
-                <h1 class="font-display">
-                    Twitch <span class="accent">Clip Explorer</span>
-                </h1>
+                <div class="hero-inner">
+                    <p class="hero-status">
+                        twitch_clip_explorer --interactive
+                    </p>
+                    <h1 class="font-display">
+                        Clip Explorer<span class="cursor"></span>
+                    </h1>
 
-                <div class="search-wrapper">
-                    <div class="search-box">
-                        <svg
-                            class="search-icon"
-                            viewBox="0 0 24 24"
-                            width="20"
-                            height="20"
-                            ><path
-                                fill="currentColor"
-                                d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
-                            ></path></svg
-                        >
-                        <input
-                            type="text"
-                            id="channelInput"
-                            placeholder="Enter channel name (e.g. lunateac)"
-                            spellcheck="false"
-                            autocomplete="off"
-                        />
-                        <button id="searchBtn" class="btn-primary"
-                            >Explore</button
-                        >
-                    </div>
-                    <div id="recentSearches" class="recent-searches hidden">
-                        <span class="recent-label">Recent searches</span>
-                        <ul id="recentList" class="recent-list"></ul>
+                    <div class="search-wrapper">
+                        <p class="search-prompt-line">
+                            enter channel name to begin
+                        </p>
+                        <div class="search-box">
+                            <span class="search-prompt">$_</span>
+                            <input
+                                type="text"
+                                id="channelInput"
+                                placeholder="channel (e.g. lunateac)"
+                                spellcheck="false"
+                                autocomplete="off"
+                            />
+                            <button id="searchBtn" class="btn-primary"
+                                >SCAN</button
+                            >
+                        </div>
+                        <div id="recentSearches" class="recent-searches hidden">
+                            <span class="recent-label">recent</span>
+                            <ul id="recentList" class="recent-list"></ul>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -123,6 +122,11 @@ import "../styles/index.css";
 
                     <div class="stats">
                         <span id="clipsCount">0</span> clips found
+                        <button
+                            type="button"
+                            id="loadOlderBtn"
+                            class="load-older-btn hidden">Load all clips</button
+                        >
                     </div>
                 </div>
 
@@ -138,7 +142,6 @@ import "../styles/index.css";
                 <div id="emptyState" class="empty-state hidden">
                     <p>No clips found for this criteria.</p>
                 </div>
-
             </div>
         </section>
 

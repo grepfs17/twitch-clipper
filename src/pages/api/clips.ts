@@ -7,6 +7,8 @@ export const GET: APIRoute = async ({ request }) => {
     const channel = url.searchParams.get('channel');
     const timeRange = url.searchParams.get('timeRange') || 'all';
     const after = url.searchParams.get('after') || undefined;
+    const startedAtParam = url.searchParams.get('startedAt');
+    const endedAtParam = url.searchParams.get('endedAt');
 
     if (!channel) {
         return new Response(JSON.stringify({ error: 'Channel name is required' }), { status: 400 });
@@ -23,7 +25,9 @@ export const GET: APIRoute = async ({ request }) => {
         let startedAt: string | undefined;
         const now = new Date();
 
-        if (timeRange === '24h') {
+        if (startedAtParam) {
+            startedAt = startedAtParam;
+        } else if (timeRange === '24h') {
             startedAt = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
         } else if (timeRange === '7d') {
             startedAt = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -33,6 +37,7 @@ export const GET: APIRoute = async ({ request }) => {
 
         const clipsData = await getClips(broadcasterId, token, {
             started_at: startedAt,
+            ended_at: endedAtParam || undefined,
             first: 100,
             after
         });

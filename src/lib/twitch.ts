@@ -1,10 +1,19 @@
 
+// ── Token cache ────────────────────────────────────────────────────────────────
+let _cachedToken: string | null = null;
+let _tokenExpiresAt = 0; // unix ms
+
 export async function getAccessToken() {
   const clientId = import.meta.env.TWITCH_CLIENT_ID;
   const clientSecret = import.meta.env.TWITCH_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
     throw new Error('Twitch credentials not found in environment variables');
+  }
+
+  // Return cached token if still valid (with 60s buffer)
+  if (_cachedToken && Date.now() < _tokenExpiresAt - 60_000) {
+    return _cachedToken;
   }
 
   const response = await fetch('https://id.twitch.tv/oauth2/token', {
@@ -25,8 +34,11 @@ export async function getAccessToken() {
   }
 
   const data = await response.json();
-  return data.access_token;
+  _cachedToken = data.access_token;
+  _tokenExpiresAt = Date.now() + (data.expires_in ?? 3600) * 1000;
+  return _cachedToken!;
 }
+
 
 export async function getBroadcasterId(login: string, token: string) {
   const clientId = import.meta.env.TWITCH_CLIENT_ID;
@@ -50,15 +62,15 @@ export async function getBroadcasterId(login: string, token: string) {
   return data.data[0].id;
 }
 
-export async function getClips(broadcasterId: string, token: string, options: { 
-  started_at?: string, 
-  ended_at?: string, 
+export async function getClips(broadcasterId: string, token: string, options: {
+  started_at?: string,
+  ended_at?: string,
   first?: number,
   after?: string
 } = {}) {
   const clientId = import.meta.env.TWITCH_CLIENT_ID;
   const url = new URL('https://api.twitch.tv/helix/clips');
-  
+
   url.searchParams.append('broadcaster_id', broadcasterId);
   if (options.started_at) url.searchParams.append('started_at', options.started_at);
   if (options.ended_at) url.searchParams.append('ended_at', options.ended_at);
@@ -81,10 +93,10 @@ export async function getClips(broadcasterId: string, token: string, options: {
 
 export async function getGames(gameIds: string[], token: string) {
   if (gameIds.length === 0) return [];
-  
+
   const clientId = import.meta.env.TWITCH_CLIENT_ID;
   const url = new URL('https://api.twitch.tv/helix/games');
-  
+
   // Twitch allows up to 100 IDs per request
   gameIds.forEach(id => url.searchParams.append('id', id));
 
