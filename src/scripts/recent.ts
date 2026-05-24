@@ -1,4 +1,5 @@
 import { elements } from "./dom";
+import { clearCache } from "./cache";
 
 const STORAGE_KEY = "tc-recent";
 const MAX_ITEMS = 10;
@@ -24,11 +25,12 @@ export function addRecent(channel: string) {
     renderRecent();
 }
 
-export function removeRecent(channel: string) {
+export async function removeRecent(channel: string) {
     let list = loadRecent();
     list = list.filter((c) => c !== channel);
     saveRecent(list);
     renderRecent();
+    await clearCache(channel);
 }
 
 function renderRecent() {

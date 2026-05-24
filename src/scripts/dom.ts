@@ -36,4 +36,11 @@ export const elements = {
     modalIframe: document.getElementById("modalIframe") as HTMLIFrameElement,
     modalCloseBtn: document.getElementById("modalCloseBtn"),
     modalCopyBtn: document.getElementById("modalCopyBtn") as HTMLButtonElement,
+    modalDownloadBtn: document.getElementById("modalDownloadBtn") as HTMLButtonElement,
+    qualitySelectTrigger: document.getElementById("qualitySelectTrigger") as HTMLButtonElement,
+    qualitySelect: document.getElementById("qualitySelect") as HTMLInputElement,
+    qualitySelectOptions: document.getElementById("qualitySelectOptions") as HTMLUListElement,
+    downloadProgress: document.getElementById("downloadProgress") as HTMLDivElement,
+    downloadProgressFill: document.getElementById("downloadProgressFill") as HTMLDivElement,
+    downloadProgressText: document.getElementById("downloadProgressText") as HTMLSpanElement,
 };

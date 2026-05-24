@@ -185,22 +185,72 @@ import "../styles/index.css";
                     <span class="meta-dot"></span>
                     <span id="modalDate" class="modal-date"></span>
                 </div>
-                <button
-                    type="button"
-                    id="modalCopyBtn"
-                    class="btn-primary copy-btn"
-                >
-                    <svg
-                        viewBox="0 0 24 24"
-                        width="16"
-                        height="16"
-                        fill="currentColor"
-                        ><path
-                            d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"
-                        ></path></svg
-                    >
-                    Copy Clip Link
-                </button>
+                <div class="modal-actions">
+                    <div class="download-quality-group">
+                        <label for="qualitySelect" class="quality-label">Download Quality</label>
+                        <div class="custom-select">
+                            <button
+                                type="button"
+                                class="custom-select-trigger"
+                                id="qualitySelectTrigger">Best Quality</button
+                            >
+                            <input
+                                type="hidden"
+                                id="qualitySelect"
+                                value="best"
+                            />
+                            <ul
+                                class="custom-select-options"
+                                id="qualitySelectOptions"
+                            >
+                                <li data-value="best">Best Quality</li>
+                                <li data-value="1080p">1080p</li>
+                                <li data-value="720p">720p</li>
+                                <li data-value="480p">480p</li>
+                                <li data-value="360p">360p</li>
+                                <li data-value="160p">160p</li>
+                                <li class="optgroup-header">Portrait Mode</li>
+                                <li data-value="portrait-1080p">1080p Portrait</li>
+                                <li data-value="portrait-720p">720p Portrait</li>
+                                <li data-value="portrait-480p">480p Portrait</li>
+                                <li data-value="portrait-360p">360p Portrait</li>
+                                <li data-value="portrait-160p">160p Portrait</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="modal-btn-group">
+                        <button
+                            type="button"
+                            id="modalDownloadBtn"
+                            class="btn-primary download-btn"
+                        >
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                            Download
+                        </button>
+                        <div class="download-progress" id="downloadProgress" style="display:none">
+                            <div class="download-progress-bar">
+                                <div class="download-progress-fill" id="downloadProgressFill"></div>
+                            </div>
+                            <span class="download-progress-text" id="downloadProgressText">0%</span>
+                        </div>
+                        <button
+                            type="button"
+                            id="modalCopyBtn"
+                            class="btn-primary copy-btn"
+                        >
+                            <svg
+                                viewBox="0 0 24 24"
+                                width="16"
+                                height="16"
+                                fill="currentColor"
+                                ><path
+                                    d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"
+                                ></path></svg
+                            >
+                            Copy Link
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
