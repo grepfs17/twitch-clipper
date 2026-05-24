@@ -255,7 +255,7 @@ async function loadAllClips() {
 
       const totalSoFar = totalClipsBefore + backgroundClips.length;
       if (progressLabel) {
-        progressLabel.textContent = `[${windowsProcessed}/${totalWindows}] ${totalSoFar.toLocaleString()} clips`;
+        progressLabel.textContent = `[${windowsProcessed}/${totalWindows}] ${pct}%`;
       }
 
       if (progressStats) {
