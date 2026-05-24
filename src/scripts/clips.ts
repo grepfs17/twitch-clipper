@@ -9,28 +9,32 @@ let renderIndex = 0;
 let sentinel: HTMLDivElement | null = null;
 let observer: IntersectionObserver | null = null;
 
-export function setAllClips(val: any[]) { allClips = val; }
-export function setDisplayedClips(val: any[]) { displayedClips = val; }
+export function setAllClips(val: any[]) {
+  allClips = val;
+}
+export function setDisplayedClips(val: any[]) {
+  displayedClips = val;
+}
 
 export function appendClips(newClips: any[]) {
-    const existingIds = new Set(allClips.map((c) => c.id));
-    const unique = newClips.filter((c) => !existingIds.has(c.id));
-    setAllClips([...allClips, ...unique]);
+  const existingIds = new Set(allClips.map((c) => c.id));
+  const unique = newClips.filter((c) => !existingIds.has(c.id));
+  setAllClips([...allClips, ...unique]);
 }
 
 function buildClipCard(clip: any): HTMLDivElement {
-    const date = new Date(clip.created_at).toLocaleDateString(undefined, {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-    });
-    const viewCount = new Intl.NumberFormat().format(clip.view_count);
-    const duration = Math.round(clip.duration);
+  const date = new Date(clip.created_at).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+  const viewCount = new Intl.NumberFormat().format(clip.view_count);
+  const duration = Math.round(clip.duration);
 
-    const card = document.createElement("div");
-    card.className = "clip-card";
-    card.dataset.clipUrl = clip.url;
-    card.innerHTML = `
+  const card = document.createElement("div");
+  card.className = "clip-card";
+  card.dataset.clipUrl = clip.url;
+  card.innerHTML = `
         <div class="thumb-container">
             <img src="${clip.thumbnail_url}" alt="${clip.title}" loading="lazy" />
             <div class="clip-overlay top">
@@ -52,96 +56,94 @@ function buildClipCard(clip: any): HTMLDivElement {
             </div>
         </div>
     `;
-    card.addEventListener("click", () => openClipModal(clip));
-    return card;
+  card.addEventListener("click", () => openClipModal(clip));
+  return card;
 }
 
 function setupLazyObserver() {
-    if (observer) observer.disconnect();
-    sentinel?.remove();
+  if (observer) observer.disconnect();
+  sentinel?.remove();
 
-    if (renderIndex >= displayedClips.length) return;
+  if (renderIndex >= displayedClips.length) return;
 
-    sentinel = document.createElement("div");
-    sentinel.className = "lazy-sentinel";
-    sentinel.style.height = "1px";
-    elements.clipsGrid?.parentNode?.appendChild(sentinel);
+  sentinel = document.createElement("div");
+  sentinel.className = "lazy-sentinel";
+  sentinel.style.height = "1px";
+  elements.clipsGrid?.parentNode?.appendChild(sentinel);
 
-    observer = new IntersectionObserver(
-        (entries) => {
-            if (entries[0].isIntersecting) {
-                loadMore();
-            }
-        },
-        { rootMargin: "300px" },
-    );
-    observer.observe(sentinel);
+  observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0].isIntersecting) {
+        loadMore();
+      }
+    },
+    { rootMargin: "300px" },
+  );
+  observer.observe(sentinel);
 }
 
 function loadMore() {
-    const end = Math.min(renderIndex + BATCH_SIZE, displayedClips.length);
-    for (let i = renderIndex; i < end; i++) {
-        const card = buildClipCard(displayedClips[i]);
-        elements.clipsGrid?.appendChild(card);
-    }
-    renderIndex = end;
-    updateCount();
+  const end = Math.min(renderIndex + BATCH_SIZE, displayedClips.length);
+  for (let i = renderIndex; i < end; i++) {
+    const card = buildClipCard(displayedClips[i]);
+    elements.clipsGrid?.appendChild(card);
+  }
+  renderIndex = end;
+  updateCount();
 
-    if (renderIndex >= displayedClips.length) {
-        observer?.disconnect();
-        sentinel?.remove();
-        sentinel = null;
-    }
+  if (renderIndex >= displayedClips.length) {
+    observer?.disconnect();
+    sentinel?.remove();
+    sentinel = null;
+  }
 }
 
 function updateCount() {
-    if (elements.clipsCount) {
-        elements.clipsCount.textContent = displayedClips.length.toString();
-    }
+  if (elements.clipsCount) {
+    elements.clipsCount.textContent = displayedClips.length.toString();
+  }
 }
 
 export function renderClips() {
-    if (!elements.clipsGrid) return;
-    elements.clipsGrid.innerHTML = "";
+  if (!elements.clipsGrid) return;
+  elements.clipsGrid.innerHTML = "";
 
-    if (displayedClips.length === 0) {
-        elements.emptyState?.classList.remove("hidden");
-    } else {
-        elements.emptyState?.classList.add("hidden");
-    }
+  if (displayedClips.length === 0) {
+    elements.emptyState?.classList.remove("hidden");
+  } else {
+    elements.emptyState?.classList.add("hidden");
+  }
 
-    renderIndex = 0;
-    loadMore();
-    setupLazyObserver();
-    updateCount();
+  renderIndex = 0;
+  loadMore();
+  setupLazyObserver();
+  updateCount();
 }
 
 export function applyFilters() {
-    const category = elements.categoryFilter?.value || "all";
-    const sortBy = elements.sortFilter?.value || "views";
+  const category = elements.categoryFilter?.value || "all";
+  const sortBy = elements.sortFilter?.value || "views";
 
-    let filtered = [...allClips];
+  let filtered = [...allClips];
 
-    if (category !== "all") {
-        filtered = filtered.filter((c) => c.game_name === category);
-    }
+  if (category !== "all") {
+    filtered = filtered.filter((c) => c.game_name === category);
+  }
 
-    if (sortBy === "views") {
-        filtered.sort((a, b) => b.view_count - a.view_count);
-    } else if (sortBy === "latest") {
-        filtered.sort(
-            (a, b) =>
-                new Date(b.created_at).getTime() -
-                new Date(a.created_at).getTime(),
-        );
-    } else if (sortBy === "oldest") {
-        filtered.sort(
-            (a, b) =>
-                new Date(a.created_at).getTime() -
-                new Date(b.created_at).getTime(),
-        );
-    }
+  if (sortBy === "views") {
+    filtered.sort((a, b) => b.view_count - a.view_count);
+  } else if (sortBy === "latest") {
+    filtered.sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
+  } else if (sortBy === "oldest") {
+    filtered.sort(
+      (a, b) =>
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+    );
+  }
 
-    setDisplayedClips(filtered);
-    renderClips();
+  setDisplayedClips(filtered);
+  renderClips();
 }

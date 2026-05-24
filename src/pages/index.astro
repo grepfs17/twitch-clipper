@@ -187,7 +187,9 @@ import "../styles/index.css";
                 </div>
                 <div class="modal-actions">
                     <div class="download-quality-group">
-                        <label for="qualitySelect" class="quality-label">Download Quality</label>
+                        <label for="qualitySelect" class="quality-label"
+                            >Download Quality</label
+                        >
                         <div class="custom-select">
                             <button
                                 type="button"
@@ -210,11 +212,21 @@ import "../styles/index.css";
                                 <li data-value="360p">360p</li>
                                 <li data-value="160p">160p</li>
                                 <li class="optgroup-header">Portrait Mode</li>
-                                <li data-value="portrait-1080p">1080p Portrait</li>
-                                <li data-value="portrait-720p">720p Portrait</li>
-                                <li data-value="portrait-480p">480p Portrait</li>
-                                <li data-value="portrait-360p">360p Portrait</li>
-                                <li data-value="portrait-160p">160p Portrait</li>
+                                <li data-value="portrait-1080p">
+                                    1080p Portrait
+                                </li>
+                                <li data-value="portrait-720p">
+                                    720p Portrait
+                                </li>
+                                <li data-value="portrait-480p">
+                                    480p Portrait
+                                </li>
+                                <li data-value="portrait-360p">
+                                    360p Portrait
+                                </li>
+                                <li data-value="portrait-160p">
+                                    160p Portrait
+                                </li>
                             </ul>
                         </div>
                     </div>
@@ -224,14 +236,33 @@ import "../styles/index.css";
                             id="modalDownloadBtn"
                             class="btn-primary download-btn"
                         >
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                            <svg
+                                viewBox="0 0 24 24"
+                                width="16"
+                                height="16"
+                                fill="currentColor"
+                                ><path
+                                    d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"
+                                ></path></svg
+                            >
                             Download
                         </button>
-                        <div class="download-progress" id="downloadProgress" style="display:none">
+                        <div
+                            class="download-progress"
+                            id="downloadProgress"
+                            style="display:none"
+                        >
                             <div class="download-progress-bar">
-                                <div class="download-progress-fill" id="downloadProgressFill"></div>
+                                <div
+                                    class="download-progress-fill"
+                                    id="downloadProgressFill"
+                                >
+                                </div>
                             </div>
-                            <span class="download-progress-text" id="downloadProgressText">0%</span>
+                            <span
+                                class="download-progress-text"
+                                id="downloadProgressText">0%</span
+                            >
                         </div>
                         <button
                             type="button"
