@@ -27,3 +27,4 @@ pnpm-debug.log*
 .claude/
 *lock*
 opencode.json
+ecosystem.config.js
