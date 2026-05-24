@@ -50,6 +50,8 @@ function buildClipCard(clip: any): HTMLDivElement {
         <div class="clip-info">
             <h3 class="clip-title">${clip.title}</h3>
             <div class="clip-meta">
+                <span class="clip-creator">${clip.creator_name}</span>
+                <span class="meta-dot"></span>
                 <span class="clip-game">${clip.game_name}</span>
                 <span class="meta-dot"></span>
                 <span class="clip-date">${date}</span>

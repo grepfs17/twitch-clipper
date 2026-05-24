@@ -78,6 +78,7 @@ export function openClipModal(clip: any) {
   });
 
   elements.modalTitle.textContent = clip.title;
+  if (elements.modalCreator) elements.modalCreator.textContent = clip.creator_name;
   elements.modalGame.textContent = clip.game_name;
   elements.modalDate.textContent = date;
   elements.modal.classList.remove("hidden");

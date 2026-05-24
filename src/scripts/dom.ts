@@ -19,6 +19,7 @@ export const elements = {
 
   modal: document.getElementById("clipModal"),
   modalTitle: document.getElementById("modalTitle"),
+  modalCreator: document.getElementById("modalCreator"),
   modalGame: document.getElementById("modalGame"),
   modalDate: document.getElementById("modalDate"),
   modalIframe: document.getElementById("modalIframe") as HTMLIFrameElement,
