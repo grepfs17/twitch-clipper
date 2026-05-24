@@ -4,6 +4,11 @@ import { openClipModal } from "./modal";
 export let allClips: any[] = [];
 export let displayedClips: any[] = [];
 
+const BATCH_SIZE = 50;
+let renderIndex = 0;
+let sentinel: HTMLDivElement | null = null;
+let observer: IntersectionObserver | null = null;
+
 export function setAllClips(val: any[]) { allClips = val; }
 export function setDisplayedClips(val: any[]) { displayedClips = val; }
 
@@ -11,6 +16,88 @@ export function appendClips(newClips: any[]) {
     const existingIds = new Set(allClips.map((c) => c.id));
     const unique = newClips.filter((c) => !existingIds.has(c.id));
     setAllClips([...allClips, ...unique]);
+}
+
+function buildClipCard(clip: any): HTMLDivElement {
+    const date = new Date(clip.created_at).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+    });
+    const viewCount = new Intl.NumberFormat().format(clip.view_count);
+    const duration = Math.round(clip.duration);
+
+    const card = document.createElement("div");
+    card.className = "clip-card";
+    card.dataset.clipUrl = clip.url;
+    card.innerHTML = `
+        <div class="thumb-container">
+            <img src="${clip.thumbnail_url}" alt="${clip.title}" loading="lazy" />
+            <div class="clip-overlay top">
+                <span class="views-badge">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                    ${viewCount}
+                </span>
+            </div>
+            <div class="clip-overlay bottom">
+                <span class="duration-badge">${duration}s</span>
+            </div>
+        </div>
+        <div class="clip-info">
+            <h3 class="clip-title">${clip.title}</h3>
+            <div class="clip-meta">
+                <span class="clip-game">${clip.game_name}</span>
+                <span class="meta-dot"></span>
+                <span class="clip-date">${date}</span>
+            </div>
+        </div>
+    `;
+    card.addEventListener("click", () => openClipModal(clip));
+    return card;
+}
+
+function setupLazyObserver() {
+    if (observer) observer.disconnect();
+    sentinel?.remove();
+
+    if (renderIndex >= displayedClips.length) return;
+
+    sentinel = document.createElement("div");
+    sentinel.className = "lazy-sentinel";
+    sentinel.style.height = "1px";
+    elements.clipsGrid?.parentNode?.appendChild(sentinel);
+
+    observer = new IntersectionObserver(
+        (entries) => {
+            if (entries[0].isIntersecting) {
+                loadMore();
+            }
+        },
+        { rootMargin: "300px" },
+    );
+    observer.observe(sentinel);
+}
+
+function loadMore() {
+    const end = Math.min(renderIndex + BATCH_SIZE, displayedClips.length);
+    for (let i = renderIndex; i < end; i++) {
+        const card = buildClipCard(displayedClips[i]);
+        elements.clipsGrid?.appendChild(card);
+    }
+    renderIndex = end;
+    updateCount();
+
+    if (renderIndex >= displayedClips.length) {
+        observer?.disconnect();
+        sentinel?.remove();
+        sentinel = null;
+    }
+}
+
+function updateCount() {
+    if (elements.clipsCount) {
+        elements.clipsCount.textContent = displayedClips.length.toString();
+    }
 }
 
 export function renderClips() {
@@ -23,51 +110,10 @@ export function renderClips() {
         elements.emptyState?.classList.add("hidden");
     }
 
-    displayedClips.forEach((clip) => {
-        const date = new Date(clip.created_at).toLocaleDateString(
-            undefined,
-            {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-            },
-        );
-
-        const viewCount = new Intl.NumberFormat().format(clip.view_count);
-        const duration = Math.round(clip.duration);
-
-        const card = document.createElement("div");
-        card.className = "clip-card";
-        card.dataset.clipUrl = clip.url;
-        card.innerHTML = `
-            <div class="thumb-container">
-                <img src="${clip.thumbnail_url}" alt="${clip.title}" loading="lazy" />
-                <div class="clip-overlay top">
-                    <span class="views-badge">
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-                        ${viewCount}
-                    </span>
-                </div>
-                <div class="clip-overlay bottom">
-                    <span class="duration-badge">${duration}s</span>
-                </div>
-            </div>
-            <div class="clip-info">
-                <h3 class="clip-title">${clip.title}</h3>
-                <div class="clip-meta">
-                    <span class="clip-game">${clip.game_name}</span>
-                    <span class="meta-dot"></span>
-                    <span class="clip-date">${date}</span>
-                </div>
-            </div>
-        `;
-        card.addEventListener("click", () => openClipModal(clip));
-        elements.clipsGrid!.appendChild(card);
-    });
-
-    if (elements.clipsCount) {
-        elements.clipsCount.textContent = displayedClips.length.toString();
-    }
+    renderIndex = 0;
+    loadMore();
+    setupLazyObserver();
+    updateCount();
 }
 
 export function applyFilters() {

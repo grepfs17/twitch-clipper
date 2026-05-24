@@ -12,7 +12,7 @@ import "../styles/index.css";
                         twitch_clip_explorer --interactive
                     </p>
                     <h1 class="font-display">
-                        Clip Explorer<span class="cursor"></span>
+                        Twitch Clip Explorer<span class="cursor"></span>
                     </h1>
 
                     <div class="search-wrapper">
@@ -137,6 +137,20 @@ import "../styles/index.css";
                 <div id="loader" class="loader hidden">
                     <div class="spinner"></div>
                     <span id="loaderText" class="loader-text"></span>
+                </div>
+                <div id="progressArea" class="progress-area hidden">
+                    <div class="progress-bar-track">
+                        <div
+                            id="progressBar"
+                            class="progress-bar-fill"
+                            style="width: 0%"
+                        >
+                        </div>
+                    </div>
+                    <div class="progress-info">
+                        <span id="progressLabel" class="progress-label"></span>
+                        <span id="progressStats" class="progress-stats"></span>
+                    </div>
                 </div>
 
                 <div id="emptyState" class="empty-state hidden">

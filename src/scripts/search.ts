@@ -3,6 +3,8 @@ import { allClips, setAllClips, setDisplayedClips, appendClips, applyFilters, re
 import { fetchClips } from "./api";
 import { updateCategories } from "./categories";
 import { addRecent } from "./recent";
+import { loadCache, saveCache } from "./cache";
+import { terminalConfirm, terminalToast } from "./notify";
 
 // ── Time window helpers ───────────────────────────────────────────────────────
 
@@ -12,15 +14,16 @@ interface TimeWindow {
 }
 
 /**
- * Slice the requested range into fixed-size windows walking backwards from now.
- * Each window is independently paginated to work around Twitch's cursor limit
- * (cursors expire / become invalid across large result sets).
+ * Build non-overlapping time windows walking backwards from now.
  *
- * Window sizes:
- *   24h  → 1 window of 24h    (no need to chunk)
- *   7d   → 1 window of 7d     (no need to chunk)
- *   30d  → chunks of 5 days   → 6 windows
- *   all  → chunks of 30 days  → 24 windows (~2 years back)
+ *   24h  → 1 window of 24h
+ *   7d   → 1 window of 7d
+ *   30d  → 6 × 5-day windows
+ *   all  → 30-day windows back to 2014-01-01 (~134 windows)
+ *
+ * NOTE: for "all", these windows are only used by "Load all clips".
+ * The initial search uses an unbounded fetch so Twitch returns clips
+ * sorted by view count (most popular first).
  */
 function buildWindows(range: string): TimeWindow[] {
     const now = new Date();
@@ -36,25 +39,25 @@ function buildWindows(range: string): TimeWindow[] {
     }
 
     if (range === "30d") {
-        const chunkDays = 5;
-        const totalWindows = 6; // 6 × 5d = 30d
+        const chunkMs = 5 * 24 * 60 * 60 * 1000;
         const windows: TimeWindow[] = [];
         let end = new Date(now);
-        for (let i = 0; i < totalWindows; i++) {
-            const start = new Date(end.getTime() - chunkDays * 24 * 60 * 60 * 1000);
+        for (let i = 0; i < 6; i++) {
+            const start = new Date(end.getTime() - chunkMs);
             windows.push({ startedAt: start.toISOString(), endedAt: end.toISOString() });
             end = new Date(start);
         }
         return windows;
     }
 
-    // "all" → 24 monthly windows going back ~2 years
-    const chunkDays = 30;
-    const totalWindows = 24;
+    // "all" → 30-day windows back to 2014 (full Twitch history)
+    const chunkMs = 30 * 24 * 60 * 60 * 1000;
+    const earliest = new Date("2014-01-01T00:00:00Z");
     const windows: TimeWindow[] = [];
     let end = new Date(now);
-    for (let i = 0; i < totalWindows; i++) {
-        const start = new Date(end.getTime() - chunkDays * 24 * 60 * 60 * 1000);
+    while (end > earliest) {
+        const startMs = Math.max(end.getTime() - chunkMs, earliest.getTime());
+        const start = new Date(startMs);
         windows.push({ startedAt: start.toISOString(), endedAt: end.toISOString() });
         end = new Date(start);
     }
@@ -63,11 +66,10 @@ function buildWindows(range: string): TimeWindow[] {
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
-/** Windows that haven't been fetched yet (shifted off front as we load them). */
 let pendingWindows: TimeWindow[] = [];
 let currentChannel = "";
 
-// ── Load-older button ─────────────────────────────────────────────────────────
+// ── Button label ──────────────────────────────────────────────────────────────
 
 function syncLoadAllBtn() {
     if (!elements.loadOlderBtn) return;
@@ -79,20 +81,21 @@ function syncLoadAllBtn() {
     }
 }
 
-// ── Fetch one window (full pagination) ───────────────────────────────────────
+// ── Fetch helpers ─────────────────────────────────────────────────────────────
 
+/** Paginate through one bounded time window. */
 async function fetchWindow(
     channel: string,
     range: string,
-    window: TimeWindow,
-    onProgress?: (loaded: number) => void,
+    win: TimeWindow,
+    onProgress?: (n: number) => void,
 ): Promise<any[]> {
-    const maxClips = parseInt(import.meta.env.PUBLIC_MAX_CLIPS || "5000", 10);
+    const maxClips = parseInt(import.meta.env.PUBLIC_MAX_CLIPS || "50000", 10);
     const result: any[] = [];
     let cursor = "";
 
     while (true) {
-        const data = await fetchClips(channel, range, cursor, window.startedAt, window.endedAt);
+        const data = await fetchClips(channel, range, cursor, win.startedAt, win.endedAt);
         if (!data || !data.clips || data.clips.length === 0) break;
 
         result.push(...data.clips);
@@ -100,15 +103,42 @@ async function fetchWindow(
         onProgress?.(result.length);
 
         if (!cursor || result.length >= maxClips) break;
-
-        // Small back-off to respect Twitch rate limits (800 req/min for App tokens)
         await new Promise((r) => setTimeout(r, 150));
     }
 
     return result;
 }
 
-// ── Load next pending window ──────────────────────────────────────────────────
+/**
+ * Unbounded paginated fetch — Twitch returns clips sorted by view count
+ * when no date range is given. Used for the initial "all" search so the
+ * user immediately sees the most popular clips.
+ */
+async function fetchTopClips(
+    channel: string,
+    onProgress?: (n: number) => void,
+): Promise<any[]> {
+    const maxClips = parseInt(import.meta.env.PUBLIC_MAX_CLIPS || "50000", 10);
+    const result: any[] = [];
+    let cursor = "";
+
+    while (true) {
+        // timeRange="all", no date bounds → Twitch sorts by views descending
+        const data = await fetchClips(channel, "all", cursor);
+        if (!data || !data.clips || data.clips.length === 0) break;
+
+        result.push(...data.clips);
+        cursor = data.pagination?.cursor || "";
+        onProgress?.(result.length);
+
+        if (!cursor || result.length >= maxClips) break;
+        await new Promise((r) => setTimeout(r, 150));
+    }
+
+    return result;
+}
+
+// ── Load all clips ────────────────────────────────────────────────────────────
 
 async function loadAllClips() {
     if (!currentChannel || pendingWindows.length === 0) return;
@@ -117,30 +147,90 @@ async function loadAllClips() {
     elements.loadOlderBtn!.disabled = true;
     elements.loadOlderBtn!.textContent = "Loading…";
     if (elements.loader) elements.loader.classList.remove("hidden");
+    if (elements.loaderText) elements.loaderText.textContent = "Preparing to load all clips…";
 
-    // Drain every remaining window sequentially
+    const progressArea = document.getElementById("progressArea");
+    const progressBar = document.getElementById("progressBar") as HTMLDivElement;
+    const progressLabel = document.getElementById("progressLabel") as HTMLSpanElement;
+    const progressStats = document.getElementById("progressStats") as HTMLSpanElement;
+
+    // Show the fixed progress bar at the bottom
+    progressArea?.classList.remove("hidden");
+    if (progressBar) progressBar.style.width = "0%";
+
+    const backgroundClips: any[] = [];
+    const totalClipsBefore = allClips.length;
+    let windowsProcessed = 0;
+    const totalWindows = pendingWindows.length;
+    const startTime = Date.now();
+
     while (pendingWindows.length > 0) {
         const win = pendingWindows.shift()!;
-        const prevCount = allClips.length;
+        windowsProcessed++;
 
-        const batch = await fetchWindow(currentChannel, range, win, (n) => {
-            if (elements.loaderText) {
-                elements.loaderText.textContent =
-                    `Loading ${prevCount + n} clips… (${pendingWindows.length} window${pendingWindows.length !== 1 ? "s" : ""} remaining)`;
-            }
-        });
+        const batch = await fetchWindow(currentChannel, range, win);
 
         if (batch.length > 0) {
-            appendClips(batch);
-            updateCategories();
-            applyFilters();
+            backgroundClips.push(...batch);
         }
+
+        const pct = Math.round((windowsProcessed / totalWindows) * 100);
+        if (progressBar) progressBar.style.width = `${Math.min(pct, 100)}%`;
+
+        const totalSoFar = totalClipsBefore + backgroundClips.length;
+        if (progressLabel) {
+            progressLabel.textContent = `[${windowsProcessed}/${totalWindows}] ${totalSoFar.toLocaleString()} clips`;
+        }
+
+        if (progressStats) {
+            const elapsed = Math.round((Date.now() - startTime) / 1000);
+            const left = pendingWindows.length;
+            if (windowsProcessed > 1 && elapsed > 3) {
+                const avg = elapsed / windowsProcessed;
+                const est = Math.round(avg * left);
+                progressStats.textContent = est >= 60
+                    ? `~${Math.round(est / 60)}m ${est % 60}s`
+                    : `~${est}s`;
+            } else {
+                progressStats.textContent = `${left} window${left !== 1 ? "s" : ""}`;
+            }
+        }
+
+        if (elements.loaderText) {
+            elements.loaderText.textContent = `Loading window ${windowsProcessed}/${totalWindows} — ${totalSoFar.toLocaleString()} clips`;
+        }
+    }
+
+    if (progressBar) progressBar.style.width = "100%";
+    if (progressLabel) progressLabel.textContent = "✓ Complete — saving to cache…";
+    if (progressStats) progressStats.textContent = "";
+
+    if (backgroundClips.length > 0) {
+        appendClips(backgroundClips);
     }
 
     if (elements.loader) elements.loader.classList.add("hidden");
     if (elements.loaderText) elements.loaderText.textContent = "";
     elements.loadOlderBtn!.disabled = false;
     syncLoadAllBtn();
+
+    // Apply current filters to the full merged result
+    updateCategories();
+    applyFilters();
+
+    // Automatically save to cache after background loading completes
+    try {
+        await saveCache(currentChannel, allClips);
+        terminalToast(`${allClips.length.toLocaleString()} clips cached for ${currentChannel}.`);
+    } catch (err) {
+        console.error("Cache save failed:", err);
+        terminalToast("Cache save failed. Storage may be full.");
+    }
+
+    // Hide progress area after a short delay
+    setTimeout(() => {
+        progressArea?.classList.add("hidden");
+    }, 2000);
 }
 
 // ── Main search ───────────────────────────────────────────────────────────────
@@ -149,7 +239,6 @@ async function handleSearch() {
     const channel = elements.channelInput?.value.trim();
     if (!channel) return;
 
-    // Reset state
     currentChannel = channel;
     pendingWindows = [];
     syncLoadAllBtn();
@@ -163,17 +252,63 @@ async function handleSearch() {
     if (elements.loaderText) elements.loaderText.textContent = "";
 
     const range = elements.rangeFilter?.value || "all";
-    const windows = buildWindows(range);
 
-    // Always fetch the first window immediately on search
-    const firstWindow = windows[0];
-    pendingWindows = windows.slice(1);
+    // ── Check cache (only for "all" since that's what we persist) ────────────
+    if (range === "all") {
+        const cached = await loadCache(channel);
+        if (cached) {
+            const age = Math.round((Date.now() - new Date(cached.savedAt).getTime()) / 1000 / 60);
+            const ageLabel = age < 60
+                ? `${age}min ago`
+                : age < 1440
+                    ? `${Math.round(age / 60)}h ago`
+                    : `${Math.round(age / 1440)}d ago`;
 
-    const firstBatch = await fetchWindow(channel, range, firstWindow, (n) => {
-        if (elements.loaderText) {
-            elements.loaderText.textContent = `Loading ${n} clips…`;
+            elements.loader?.classList.add("hidden");
+
+            const useCached = await terminalConfirm(
+                `Found <strong>${cached.clips.length.toLocaleString()} cached clips</strong> for <strong>${channel}</strong> (saved ${ageLabel}). Load from cache?`,
+                "USE CACHE",
+                "FETCH FRESH",
+            );
+
+            if (useCached) {
+                addRecent(channel);
+                setAllClips(cached.clips);
+                updateCategories();
+                applyFilters();
+                // No pending windows — full library is already loaded
+                syncLoadAllBtn();
+                return;
+            }
+
+            // User chose fresh — re-show loader
+            elements.loader?.classList.remove("hidden");
         }
-    });
+    }
+
+    // ── Fetch initial clips ───────────────────────────────────────────────────
+    let firstBatch: any[];
+
+    if (range === "all") {
+        // Unbounded → Twitch returns by view count: user sees top clips instantly
+        firstBatch = await fetchTopClips(channel, (n) => {
+            if (elements.loaderText) {
+                elements.loaderText.textContent = `Loading top clips… ${n}`;
+            }
+        });
+        // Queue ALL time windows so "Load all clips" covers full history
+        pendingWindows = buildWindows("all");
+    } else {
+        // Time-bounded ranges: use windowed strategy from the start
+        const windows = buildWindows(range);
+        firstBatch = await fetchWindow(channel, range, windows[0], (n) => {
+            if (elements.loaderText) {
+                elements.loaderText.textContent = `Loading… ${n} clips`;
+            }
+        });
+        pendingWindows = windows.slice(1);
+    }
 
     elements.loader?.classList.add("hidden");
     if (elements.loaderText) elements.loaderText.textContent = "";
@@ -188,10 +323,7 @@ async function handleSearch() {
         setAllClips([]);
         setDisplayedClips([]);
         renderClips();
-        // Still offer to check older windows in case the most recent chunk was empty
-        if (pendingWindows.length > 0) {
-            syncLoadAllBtn();
-        }
+        if (pendingWindows.length > 0) syncLoadAllBtn();
     }
 }
 
