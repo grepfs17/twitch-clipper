@@ -1,20 +1,50 @@
 ---
 interface Props {
     title: string;
+    description?: string;
 }
 
-const { title } = Astro.props;
+const { title, description = "Browse, search, and download Twitch clips by channel. View top clips by popularity, filter by category, and download in multiple quality presets including portrait mode." } = Astro.props;
+const canonicalURL = Astro.url;
+const siteName = "Twitch Clip Explorer";
 ---
 
 <!doctype html>
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <meta name="description" content="Twitch Clip Browser" />
+        <meta name="description" content={description} />
         <meta name="viewport" content="width=device-width" />
+        <meta name="robots" content="index, follow" />
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <meta name="generator" content={Astro.generator} />
         <title>{title}</title>
+
+        <link rel="canonical" href={canonicalURL} />
+
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+        <meta property="og:url" content={canonicalURL} />
+        <meta property="og:site_name" content={siteName} />
+
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={title} />
+        <meta name="twitter:description" content={description} />
+
+        <script type="application/ld+json">
+            {
+                "@context": "https://schema.org",
+                "@type": "WebApplication",
+                "name": "Twitch Clip Explorer",
+                "url": {JSON.stringify(canonicalURL.toString())},
+                "description": {JSON.stringify(description)},
+                "applicationCategory": "Multimedia",
+                "operatingSystem": "Web",
+                "browserRequirements": "Requires JavaScript"
+            }
+        </script>
+
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link
