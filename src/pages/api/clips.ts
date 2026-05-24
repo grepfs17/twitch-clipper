@@ -6,6 +6,8 @@ import {
   getGames,
 } from "../../lib/twitch";
 
+const gameNameCache = new Map<string, string>();
+
 export const GET: APIRoute = async ({ request }) => {
   const url = new URL(request.url);
   const channel = url.searchParams.get("channel");
@@ -57,13 +59,18 @@ export const GET: APIRoute = async ({ request }) => {
     const gameIds = [
       ...new Set(clipsData.data.map((clip: any) => clip.game_id)),
     ].filter((id) => id !== "") as string[];
-    const games = await getGames(gameIds, token);
+    const uncachedIds = gameIds.filter((id) => !gameNameCache.has(id));
+    if (uncachedIds.length > 0) {
+      const games = await getGames(uncachedIds, token);
+      for (const g of games) {
+        gameNameCache.set(g.id, g.name);
+      }
+    }
 
-    const gameMap = Object.fromEntries(games.map((g: any) => [g.id, g.name]));
     const clips = clipsData.data.map((clip: any) => ({
       ...clip,
       game_name:
-        gameMap[clip.game_id] || (clip.game_id ? "Loading..." : "No Category"),
+        gameNameCache.get(clip.game_id) || (clip.game_id ? "Loading..." : "No Category"),
     }));
 
     return new Response(

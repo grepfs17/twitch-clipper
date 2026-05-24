@@ -13,7 +13,7 @@ import { addRecent } from "./recent";
 import { loadCache, saveCache, clearCache } from "./cache";
 import { terminalConfirm, terminalToast } from "./notify";
 
-// ── Time window helpers ───────────────────────────────────────────────────────
+// Time window helpers
 
 interface TimeWindow {
   startedAt: string;
@@ -77,8 +77,6 @@ function buildWindows(range: string): TimeWindow[] {
   return windows;
 }
 
-// ── Cache indicator ───────────────────────────────────────────────────────────
-
 function showCacheIndicator(savedAt: string) {
   if (!elements.cacheIndicator || !elements.cacheText) return;
 
@@ -107,12 +105,8 @@ function hideCacheIndicator() {
   elements.cacheIndicator?.classList.add("hidden");
 }
 
-// ── State ─────────────────────────────────────────────────────────────────────
-
 let pendingWindows: TimeWindow[] = [];
 let currentChannel = "";
-
-// ── Button label ──────────────────────────────────────────────────────────────
 
 function syncLoadAllBtn() {
   if (!elements.loadOlderBtn) return;
@@ -124,14 +118,13 @@ function syncLoadAllBtn() {
   }
 }
 
-// ── Fetch helpers ─────────────────────────────────────────────────────────────
-
 /** Paginate through one bounded time window. */
 async function fetchWindow(
   channel: string,
   range: string,
   win: TimeWindow,
   onProgress?: (n: number) => void,
+  pageDelay = 50,
 ): Promise<any[]> {
   const maxClips = parseInt(import.meta.env.PUBLIC_MAX_CLIPS || "50000", 10);
   const result: any[] = [];
@@ -152,7 +145,7 @@ async function fetchWindow(
     onProgress?.(result.length);
 
     if (!cursor || result.length >= maxClips) break;
-    await new Promise((r) => setTimeout(r, 150));
+    await new Promise((r) => setTimeout(r, pageDelay));
   }
 
   return result;
@@ -181,13 +174,38 @@ async function fetchTopClips(
     onProgress?.(result.length);
 
     if (!cursor || result.length >= maxClips) break;
-    await new Promise((r) => setTimeout(r, 150));
+    await new Promise((r) => setTimeout(r, 50));
   }
 
   return result;
 }
 
-// ── Load all clips ────────────────────────────────────────────────────────────
+// Concurrency helper
+
+async function asyncPool<T>(
+  concurrency: number,
+  items: T[],
+  fn: (item: T, index: number) => Promise<void>,
+  onItemComplete?: () => void,
+): Promise<void> {
+  let nextIndex = 0;
+
+  async function worker(): Promise<void> {
+    while (nextIndex < items.length) {
+      const index = nextIndex++;
+      await fn(items[index], index);
+      onItemComplete?.();
+    }
+  }
+
+  const workers = Array.from(
+    { length: Math.min(concurrency, items.length) },
+    () => worker(),
+  );
+  await Promise.all(workers);
+}
+
+// Load all clips
 
 async function loadAllClips() {
   if (!currentChannel || pendingWindows.length === 0) return;
@@ -214,45 +232,50 @@ async function loadAllClips() {
 
   const backgroundClips: any[] = [];
   const totalClipsBefore = allClips.length;
-  let windowsProcessed = 0;
   const totalWindows = pendingWindows.length;
   const startTime = Date.now();
 
-  while (pendingWindows.length > 0) {
-    const win = pendingWindows.shift()!;
-    windowsProcessed++;
+  // Process windows concurrently (4 at a time)
+  const windows = [...pendingWindows];
+  pendingWindows.length = 0;
+  let windowsProcessed = 0;
 
-    const batch = await fetchWindow(currentChannel, range, win);
+  await asyncPool(
+    4,
+    windows,
+    async (win) => {
+      const batch = await fetchWindow(currentChannel, range, win);
+      if (batch.length > 0) backgroundClips.push(...batch);
+    },
+    () => {
+      windowsProcessed++;
 
-    if (batch.length > 0) {
-      backgroundClips.push(...batch);
-    }
+      const pct = Math.round((windowsProcessed / totalWindows) * 100);
+      if (progressBar) progressBar.style.width = `${Math.min(pct, 100)}%`;
 
-    const pct = Math.round((windowsProcessed / totalWindows) * 100);
-    if (progressBar) progressBar.style.width = `${Math.min(pct, 100)}%`;
-
-    const totalSoFar = totalClipsBefore + backgroundClips.length;
-    if (progressLabel) {
-      progressLabel.textContent = `[${windowsProcessed}/${totalWindows}] ${totalSoFar.toLocaleString()} clips`;
-    }
-
-    if (progressStats) {
-      const elapsed = Math.round((Date.now() - startTime) / 1000);
-      const left = pendingWindows.length;
-      if (windowsProcessed > 1 && elapsed > 3) {
-        const avg = elapsed / windowsProcessed;
-        const est = Math.round(avg * left);
-        progressStats.textContent =
-          est >= 60 ? `~${Math.round(est / 60)}m ${est % 60}s` : `~${est}s`;
-      } else {
-        progressStats.textContent = `${left} window${left !== 1 ? "s" : ""}`;
+      const totalSoFar = totalClipsBefore + backgroundClips.length;
+      if (progressLabel) {
+        progressLabel.textContent = `[${windowsProcessed}/${totalWindows}] ${totalSoFar.toLocaleString()} clips`;
       }
-    }
 
-    if (elements.loaderText) {
-      elements.loaderText.textContent = `Loading window ${windowsProcessed}/${totalWindows} — ${totalSoFar.toLocaleString()} clips`;
-    }
-  }
+      if (progressStats) {
+        const elapsed = Math.round((Date.now() - startTime) / 1000);
+        const left = totalWindows - windowsProcessed;
+        if (windowsProcessed > 1 && elapsed > 3) {
+          const avg = elapsed / windowsProcessed;
+          const est = Math.round(avg * left);
+          progressStats.textContent =
+            est >= 60 ? `~${Math.round(est / 60)}m ${est % 60}s` : `~${est}s`;
+        } else {
+          progressStats.textContent = `${left} window${left !== 1 ? "s" : ""}`;
+        }
+      }
+
+      if (elements.loaderText) {
+        elements.loaderText.textContent = `Loading window ${windowsProcessed}/${totalWindows} — ${(totalClipsBefore + backgroundClips.length).toLocaleString()} clips`;
+      }
+    },
+  );
 
   if (progressBar) progressBar.style.width = "100%";
   if (progressLabel)
@@ -289,7 +312,7 @@ async function loadAllClips() {
   }, 2000);
 }
 
-// ── Main search ───────────────────────────────────────────────────────────────
+// Main search
 
 async function handleSearch() {
   const channel = elements.channelInput?.value.trim();
@@ -310,7 +333,7 @@ async function handleSearch() {
 
   const range = elements.rangeFilter?.value || "all";
 
-  // ── Check cache (only for "all" since that's what we persist) ────────────
+  // Check cache (only for "all" since that's what we persist)
   if (range === "all") {
     const cached = await loadCache(channel);
     if (cached) {
@@ -338,7 +361,7 @@ async function handleSearch() {
         showCacheIndicator(cached.savedAt);
         updateCategories();
         applyFilters();
-        // No pending windows — full library is already loaded
+        // No pending windows, ull library is already loaded
         syncLoadAllBtn();
         return;
       }
@@ -348,7 +371,7 @@ async function handleSearch() {
     }
   }
 
-  // ── Fetch initial clips ───────────────────────────────────────────────────
+  // Fetch initial clips
   let firstBatch: any[];
 
   if (range === "all") {
@@ -387,8 +410,6 @@ async function handleSearch() {
     if (pendingWindows.length > 0) syncLoadAllBtn();
   }
 }
-
-// ── Init ──────────────────────────────────────────────────────────────────────
 
 export function initSearch() {
   elements.searchBtn?.addEventListener("click", handleSearch);
