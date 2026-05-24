@@ -472,6 +472,50 @@ input[type="text"]#channelInput::placeholder {
     font-family: var(--font-mono);
 }
 
+/* ── Clip URL bar ──────────────────────────────────── */
+
+.clip-url-bar {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding: 0.5rem 1rem;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+}
+.clip-url-bar-container {
+    width: 100%;
+}
+
+.clip-url-prompt {
+    color: var(--amber-dim);
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+}
+
+#clipUrlInput {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.4rem 0.55rem;
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+    outline: none;
+    letter-spacing: 0.04em;
+}
+
+#clipUrlInput:focus {
+    border-color: var(--amber);
+    box-shadow: 0 0 0 1px rgba(255, 176, 0, 0.2);
+}
+
+#clipUrlInput::placeholder {
+    color: var(--text-dim);
+    opacity: 0.5;
+}
+
 /* ── Custom select ──────────────────────────────────── */
 
 .custom-select {
@@ -1796,6 +1840,7 @@ input[type="text"]#channelInput::placeholder {
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
+    justify-content: center;
 }
 
 .quality-label {
