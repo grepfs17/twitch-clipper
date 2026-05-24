@@ -120,13 +120,20 @@ import "../styles/index.css";
                         </div>
                     </div>
 
-                    <div class="stats">
-                        <span id="clipsCount">0</span> clips found
-                        <button
-                            type="button"
-                            id="loadOlderBtn"
-                            class="load-older-btn hidden">Load all clips</button
-                        >
+                    <div class="toolbar-right">
+                        <div id="cacheIndicator" class="cache-indicator hidden">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                            <span id="cacheText" class="cache-text"></span>
+                            <button type="button" id="cacheRefresh" class="cache-refresh-btn">Refresh</button>
+                        </div>
+                        <div class="stats">
+                            <span id="clipsCount">0</span> clips found
+                            <button
+                                type="button"
+                                id="loadOlderBtn"
+                                class="load-older-btn hidden">Load all clips</button
+                            >
+                        </div>
                     </div>
                 </div>
 

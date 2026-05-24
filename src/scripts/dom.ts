@@ -43,4 +43,8 @@ export const elements = {
   downloadProgressText: document.getElementById(
     "downloadProgressText",
   ) as HTMLSpanElement,
+
+  cacheIndicator: document.getElementById("cacheIndicator"),
+  cacheText: document.getElementById("cacheText") as HTMLSpanElement,
+  cacheRefresh: document.getElementById("cacheRefresh") as HTMLButtonElement,
 };

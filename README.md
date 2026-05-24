@@ -1,43 +1,84 @@
-# Astro Starter Kit: Minimal
+# Twitch Clip Explorer
 
-```sh
-pnpm create astro@latest -- --template minimal
+A web application for browsing and downloading clips from Twitch streamers. Searches the Twitch API by channel name, displays results in a grid with filtering and sorting, and downloads clips via twitch-dlp.
+
+## Prerequisites
+
+- Node.js 22.12.0 or later
+- twitch-dlp installed globally: `npm install -g twitch-dlp`
+- A Twitch Developer client ID and secret (from [Twitch Developer Console](https://dev.twitch.tv/console))
+
+## Setup
+
+1. Clone the repository
+
+```
+cd twitch-clipper
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+2. Install dependencies
 
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
-
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
+```
+pnpm install
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+3. Create a `.env` file with your Twitch credentials
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+```
+TWITCH_CLIENT_ID=your-client-id
+TWITCH_CLIENT_SECRET=your-client-secret
+PUBLIC_MAX_CLIPS=50000
+```
 
-Any static assets, like images, can be placed in the `public/` directory.
+4. Start the development server
 
-## 🧞 Commands
+```
+pnpm dev
+```
 
-All commands are run from the root of the project, from a terminal:
+5. Open http://localhost:4321 in your browser
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `pnpm install`             | Installs dependencies                            |
-| `pnpm dev`             | Starts local dev server at `localhost:4321`      |
-| `pnpm build`           | Build your production site to `./dist/`          |
-| `pnpm preview`         | Preview your build locally, before deploying     |
-| `pnpm astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `pnpm astro -- --help` | Get help using the Astro CLI                     |
+## Build and deploy
 
-## 👀 Want to learn more?
+```
+pnpm build
+pnpm preview
+```
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+## Project structure
+
+```
+src/
+  lib/
+    twitch.ts          Twitch API client (OAuth, clips, games endpoints)
+  pages/
+    api/
+      clips.ts         Proxy endpoint for fetching clips from Twitch API
+      download.ts      Server-side download handler using twitch-dlp
+    index.astro        Main page with search UI and clip grid
+  scripts/
+    index.ts           Application entry point, initializes all modules
+    api.ts             HTTP client for API proxy calls
+    cache.ts           IndexedDB cache for storing full clip libraries per channel
+    categories.ts      Game category detection and filtering
+    clips.ts           Clip rendering, lazy loading, and filter logic
+    dom.ts             DOM element references
+    filters.ts         Sort and filter UI state
+    modal.ts           Clip preview modal and download progress
+    notify.ts          Terminal-style confirmation dialogs and toast notifications
+    recent.ts          Recent search history stored in localStorage
+    search.ts          Search orchestration, time window pagination, cache handling
+  styles/
+    index.css          All styles
+```
+
+## Features
+
+- Search any Twitch channel and retrieve all available clips
+- Cache full clip libraries in IndexedDB for faster subsequent searches
+- Filter clips by game category and sort by views, date, or oldest
+- Lazy-loaded clip grid with infinite scroll
+- Clip preview modal with Twitch embed player
+- Download clips in multiple qualities via twitch-dlp
+- Recent searches stored in localStorage
+- Fixed progress bar for long-running full-library loads

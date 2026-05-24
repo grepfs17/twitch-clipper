@@ -25,7 +25,7 @@ export function addRecent(channel: string) {
   renderRecent();
 }
 
-export async function removeRecent(channel: string) {
+async function removeRecent(channel: string) {
   let list = loadRecent();
   list = list.filter((c) => c !== channel);
   saveRecent(list);
