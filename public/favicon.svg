@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <rect width="100" height="100" rx="12" fill="#0c0900"/>
-  <rect x="15" y="18" width="70" height="64" rx="4" fill="none" stroke="#ffb000" stroke-width="3"/>
-  <rect x="15" y="18" width="70" height="14" rx="4" fill="#1f1400" stroke="none"/>
-  <circle cx="25" cy="25" r="2.5" fill="#ffb000"/>
-  <circle cx="32" cy="25" r="2.5" fill="#ffb000"/>
-  <circle cx="39" cy="25" r="2.5" fill="#ffb000"/>
-  <text x="22" y="58" font-family="monospace" font-size="24" font-weight="bold" fill="#ffb000">>_</text>
+  <rect width="100" height="100" rx="10" fill="#0c0900"/>
+  <rect x="6" y="10" width="88" height="80" rx="4" fill="none" stroke="#ffb000" stroke-width="3"/>
+  <rect x="6" y="10" width="88" height="12" rx="4" fill="#1f1400" stroke="none"/>
+  <circle cx="16" cy="16" r="2.5" fill="#ffb000"/>
+  <circle cx="23" cy="16" r="2.5" fill="#ffb000"/>
+  <circle cx="30" cy="16" r="2.5" fill="#ffb000"/>
+  <text x="6" y="72" font-family="monospace" font-size="46" font-weight="bold" fill="#ffb000">tce</text>
 </svg>
