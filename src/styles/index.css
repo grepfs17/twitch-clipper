@@ -1122,6 +1122,62 @@ input[type="text"]#channelInput::placeholder {
     display: none;
 }
 
+.filter-search-wrapper {
+    position: relative;
+    min-width: 142px;
+}
+
+#filterSearchInput {
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 0.38rem 2rem 0.38rem 0.55rem;
+    outline: none;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    width: 100%;
+    box-sizing: border-box;
+    transition:
+        border-color 0.15s,
+        color 0.15s;
+    font-family: var(--font-mono);
+    letter-spacing: 0.04em;
+}
+
+#filterSearchInput:focus {
+    border-color: var(--amber);
+    color: var(--text-bright);
+}
+
+#filterSearchInput::placeholder {
+    color: var(--text-dim);
+    opacity: 0.5;
+}
+
+.filter-search-clear {
+    position: absolute;
+    right: 0.3rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    cursor: pointer;
+    padding: 0.1rem 0.25rem;
+    line-height: 1;
+    z-index: 1;
+    font-family: inherit;
+}
+
+.filter-search-clear:hover {
+    color: var(--amber);
+}
+
+.filter-search-clear.hidden {
+    display: none;
+}
+
 .autocomplete-list {
     position: absolute;
     top: 100%;
@@ -2031,7 +2087,8 @@ input[type="text"]#channelInput::placeholder {
     }
 
     .filter-item .autocomplete-wrapper,
-    .filter-item .custom-select {
+    .filter-item .custom-select,
+    .filter-item .filter-search-wrapper {
         width: 100%;
     }
 

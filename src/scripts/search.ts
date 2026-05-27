@@ -323,6 +323,8 @@ async function handleSearch() {
   syncLoadAllBtn();
   setAllClips([]);
   setDisplayedClips([]);
+  if (elements.filterSearchInput) elements.filterSearchInput.value = "";
+  elements.filterSearchClear?.classList.add("hidden");
 
   elements.resultsSection?.classList.remove("hidden");
   hideCacheIndicator();
@@ -419,6 +421,19 @@ export function initSearch() {
 
   elements.rangeFilter?.addEventListener("change", handleSearch);
   elements.sortFilter?.addEventListener("change", applyFilters);
+
+  elements.filterSearchInput?.addEventListener("input", () => {
+    const hasText = !!elements.filterSearchInput.value;
+    elements.filterSearchClear?.classList.toggle("hidden", !hasText);
+    applyFilters();
+  });
+
+  elements.filterSearchClear?.addEventListener("click", () => {
+    elements.filterSearchInput.value = "";
+    elements.filterSearchClear.classList.add("hidden");
+    elements.filterSearchInput.focus();
+    applyFilters();
+  });
 
   elements.loadOlderBtn?.addEventListener("click", async () => {
     const ok = await terminalConfirm(

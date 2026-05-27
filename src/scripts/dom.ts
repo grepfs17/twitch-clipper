@@ -8,6 +8,12 @@ export const elements = {
   categoryInput: document.getElementById("categoryInput") as HTMLInputElement,
   categoryList: document.getElementById("categoryList") as HTMLUListElement,
   categoryClear: document.getElementById("categoryClear") as HTMLButtonElement,
+  filterSearchInput: document.getElementById(
+    "filterSearchInput",
+  ) as HTMLInputElement,
+  filterSearchClear: document.getElementById(
+    "filterSearchClear",
+  ) as HTMLButtonElement,
   sortFilter: document.getElementById("sortFilter") as HTMLInputElement,
   clipsCount: document.getElementById("clipsCount"),
   loader: document.getElementById("loader"),

@@ -124,12 +124,22 @@ export function renderClips() {
 
 export function applyFilters() {
   const category = elements.categoryFilter?.value || "all";
+  const searchText = elements.filterSearchInput?.value.trim().toLowerCase() || "";
   const sortBy = elements.sortFilter?.value || "views";
 
   let filtered = [...allClips];
 
   if (category !== "all") {
     filtered = filtered.filter((c) => c.game_name === category);
+  }
+
+  if (searchText) {
+    filtered = filtered.filter(
+      (c) =>
+        c.title?.toLowerCase().includes(searchText) ||
+        c.creator_name?.toLowerCase().includes(searchText) ||
+        c.game_name?.toLowerCase().includes(searchText),
+    );
   }
 
   if (sortBy === "views") {

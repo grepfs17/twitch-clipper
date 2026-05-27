@@ -112,6 +112,24 @@ import "../styles/index.css";
                         </div>
 
                         <div class="filter-item">
+                            <label>Search</label>
+                            <div class="filter-search-wrapper">
+                                <input
+                                    type="text"
+                                    id="filterSearchInput"
+                                    placeholder="Search clips..."
+                                    autocomplete="off"
+                                />
+                                <button
+                                    type="button"
+                                    id="filterSearchClear"
+                                    class="filter-search-clear hidden"
+                                    aria-label="Clear search">&times;</button
+                                >
+                            </div>
+                        </div>
+
+                        <div class="filter-item">
                             <label>Sort By</label>
                             <div class="custom-select">
                                 <button
