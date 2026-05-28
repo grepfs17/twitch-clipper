@@ -26,24 +26,23 @@ function getClipEmbedUrl(clipUrl: string): string {
   return `https://clips.twitch.tv/embed?clip=${slug}&parent=${parent}&autoplay=true&muted=true`;
 }
 
-function setEmbedQuality() {
+function sendEmbedCommand(func: string, args: any[] = []) {
   const iframe = elements.modalIframe;
   if (!iframe?.contentWindow) return;
-  iframe.contentWindow.postMessage(JSON.stringify({
-    event: "command",
-    func: "setQuality",
-    args: ["chunked"],
-  }), "*");
+  iframe.contentWindow.postMessage(JSON.stringify({ event: "command", func, args }), "*");
 }
 
-function unmuteOnInteraction() {
-  const iframe = elements.modalIframe;
-  if (!iframe?.contentWindow) return;
-  iframe.contentWindow.postMessage(JSON.stringify({
-    event: "command",
-    func: "unMute",
-    args: [],
-  }), "*");
+function onEmbedReady(cb: () => void) {
+  const handler = (e: MessageEvent) => {
+    try {
+      const data = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
+      if (data.event === "ready") {
+        window.removeEventListener("message", handler);
+        cb();
+      }
+    } catch {}
+  };
+  window.addEventListener("message", handler);
 }
 
 function initQualitySelector() {
@@ -132,7 +131,9 @@ export function openClipModal(clip: any) {
     elements.favoritesModal.style.zIndex = "999";
   }
   document.body.style.overflow = "hidden";
-  elements.modalIframe!.onload = () => setEmbedQuality();
+  onEmbedReady(() => {
+    sendEmbedCommand("setQuality", ["chunked"]);
+  });
   elements.modalIframe!.src = getClipEmbedUrl(clip.url);
 }
 
@@ -377,7 +378,7 @@ export function initModal() {
   });
 
   const videoWrapper = elements.modalIframe?.closest(".modal-video-wrapper");
-  videoWrapper?.addEventListener("click", () => unmuteOnInteraction());
+  videoWrapper?.addEventListener("click", () => sendEmbedCommand("unMute"));
 
   window.addEventListener("fav:openClip", ((e: CustomEvent) => {
     openClipModal(e.detail);
