@@ -69,6 +69,7 @@ export function initCategories() {
 
   elements.categoryClear?.addEventListener("click", () => {
     if (elements.categoryInput) elements.categoryInput.value = "";
+    filterCategoryList("");
     elements.categoryInput?.focus();
     selectCategory("all", "All Categories");
   });
