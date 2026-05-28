@@ -5,7 +5,7 @@ interface Props {
 }
 
 const { title, description = "Browse, search, and download Twitch clips by channel. View top clips by popularity, filter by category, and download in multiple quality presets including portrait mode." } = Astro.props;
-const canonicalURL = Astro.url;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 const siteName = "Twitch Clip Explorer";
 ---
 
