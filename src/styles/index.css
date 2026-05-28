@@ -1449,6 +1449,51 @@ input[type="text"]#channelInput::placeholder {
     color: var(--amber);
 }
 
+/* ── Modal notes ──────────────────────────────────── */
+
+.modal-notes {
+    margin-top: 0.85rem;
+    border-top: 1px solid var(--border);
+    padding-top: 0.75rem;
+}
+
+.modal-notes-label {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 400;
+    color: var(--amber-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-family: var(--font-mono);
+    margin-bottom: 0.4rem;
+}
+
+.modal-notes-input {
+    width: 100%;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 0.55rem 0.7rem;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    line-height: 1.5;
+    resize: vertical;
+    min-height: 3.2rem;
+    outline: none;
+    letter-spacing: 0.02em;
+    transition: border-color 0.15s;
+}
+
+.modal-notes-input:focus {
+    border-color: var(--amber);
+    box-shadow: 0 0 0 1px rgba(255, 176, 0, 0.15);
+}
+
+.modal-notes-input::placeholder {
+    color: var(--text-dim);
+    opacity: 0.5;
+}
+
 /* ── Modal actions ──────────────────────────────────── */
 
 .modal-actions {

@@ -1,5 +1,6 @@
 import { elements } from "./dom";
 import { isFavorite, toggleFavorite, type FavoriteClip } from "./favorites";
+import { getNote, saveNote } from "./notes";
 
 let currentClipUrl = "";
 let currentClipMeta: FavoriteClip | null = null;
@@ -98,6 +99,9 @@ export function openClipModal(clip: any) {
     elements.modalCreator.textContent = clip.creator_name;
   elements.modalGame.textContent = clip.game_name;
   elements.modalDate.textContent = date;
+  if (elements.modalNotes) {
+    elements.modalNotes.value = getNote(clip.url);
+  }
   elements.modal.classList.remove("hidden");
   if (elements.favoritesModal && !elements.favoritesModal.classList.contains("hidden")) {
     elements.favoritesModal.style.zIndex = "999";
@@ -333,6 +337,12 @@ export function initModal() {
   });
 
   initQualitySelector();
+
+  elements.modalNotes?.addEventListener("input", () => {
+    if (currentClipUrl) {
+      saveNote(currentClipUrl, elements.modalNotes.value);
+    }
+  });
 
   window.addEventListener("fav:openClip", ((e: CustomEvent) => {
     openClipModal(e.detail);

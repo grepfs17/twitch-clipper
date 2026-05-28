@@ -63,4 +63,6 @@ export const elements = {
   favoritesGrid: document.getElementById("favoritesGrid"),
   favoritesCount: document.getElementById("favoritesCount"),
   favoritesEmpty: document.getElementById("favoritesEmpty"),
+
+  modalNotes: document.getElementById("modalNotes") as HTMLTextAreaElement,
 };
