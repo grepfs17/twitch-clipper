@@ -65,4 +65,6 @@ export const elements = {
   favoritesEmpty: document.getElementById("favoritesEmpty"),
 
   modalNotes: document.getElementById("modalNotes") as HTMLTextAreaElement,
+  modalNotesSection: document.getElementById("modalNotesSection"),
+  modalNotesToggle: document.getElementById("modalNotesToggle"),
 };

@@ -409,15 +409,20 @@ import "../styles/index.css";
                         </a>
                     </div>
                 </div>
-                <div class="modal-notes">
-                    <label class="modal-notes-label">&gt; notes</label>
-                    <textarea
-                        id="modalNotes"
-                        class="modal-notes-input"
-                        placeholder="Add notes about this clip..."
-                        rows="3"
-                        spellcheck="false"
-                    ></textarea>
+                <div class="modal-notes" id="modalNotesSection">
+                    <button type="button" class="modal-notes-toggle" id="modalNotesToggle">
+                        <span class="modal-notes-chevron">&#9654;</span>
+                        <span>&gt; notes</span>
+                    </button>
+                    <div class="modal-notes-body">
+                        <textarea
+                            id="modalNotes"
+                            class="modal-notes-input"
+                            placeholder="Add notes about this clip..."
+                            rows="3"
+                            spellcheck="false"
+                        ></textarea>
+                    </div>
                 </div>
             </div>
         </div>

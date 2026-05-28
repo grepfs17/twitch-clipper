@@ -102,6 +102,11 @@ export function openClipModal(clip: any) {
   if (elements.modalNotes) {
     elements.modalNotes.value = getNote(clip.url);
   }
+  if (elements.modalNotesSection) {
+    const hasNotes = !!getNote(clip.url);
+    elements.modalNotesSection.classList.toggle("has-notes", hasNotes);
+    elements.modalNotesSection.classList.remove("open");
+  }
   elements.modal.classList.remove("hidden");
   if (elements.favoritesModal && !elements.favoritesModal.classList.contains("hidden")) {
     elements.favoritesModal.style.zIndex = "999";
@@ -342,6 +347,13 @@ export function initModal() {
     if (currentClipUrl) {
       saveNote(currentClipUrl, elements.modalNotes.value);
     }
+    if (elements.modalNotesSection) {
+      elements.modalNotesSection.classList.toggle("has-notes", !!elements.modalNotes.value.trim());
+    }
+  });
+
+  elements.modalNotesToggle?.addEventListener("click", () => {
+    elements.modalNotesSection?.classList.toggle("open");
   });
 
   window.addEventListener("fav:openClip", ((e: CustomEvent) => {

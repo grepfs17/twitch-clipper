@@ -1454,18 +1454,47 @@ input[type="text"]#channelInput::placeholder {
 .modal-notes {
     margin-top: 0.85rem;
     border-top: 1px solid var(--border);
-    padding-top: 0.75rem;
 }
 
-.modal-notes-label {
-    display: block;
+.modal-notes-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.55rem 0;
     font-size: 0.65rem;
     font-weight: 400;
     color: var(--amber-dim);
     text-transform: uppercase;
     letter-spacing: 0.18em;
     font-family: var(--font-mono);
-    margin-bottom: 0.4rem;
+    cursor: pointer;
+    background: none;
+    border: none;
+    transition: color 0.15s;
+}
+
+.modal-notes-toggle:hover {
+    color: var(--amber);
+}
+
+.modal-notes-chevron {
+    font-size: 0.5rem;
+    transition: transform 0.15s;
+}
+
+.modal-notes.has-notes .modal-notes-chevron,
+.modal-notes.open .modal-notes-chevron {
+    transform: rotate(90deg);
+}
+
+.modal-notes-body {
+    display: none;
+}
+
+.modal-notes.has-notes .modal-notes-body,
+.modal-notes.open .modal-notes-body {
+    display: block;
 }
 
 .modal-notes-input {
@@ -1505,8 +1534,8 @@ input[type="text"]#channelInput::placeholder {
 
 .download-quality-group {
     display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
+    align-items: center;
+    gap: 0.5rem;
     justify-content: center;
 }
 
