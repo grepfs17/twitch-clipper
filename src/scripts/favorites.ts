@@ -138,7 +138,6 @@ export function initFavorites() {
           .then((r) => r.json())
           .then((data) => {
             if (data.clip) {
-              closeFavoritesModal();
               window.dispatchEvent(
                 new CustomEvent("fav:openClip", { detail: data.clip }),
               );

@@ -99,6 +99,9 @@ export function openClipModal(clip: any) {
   elements.modalGame.textContent = clip.game_name;
   elements.modalDate.textContent = date;
   elements.modal.classList.remove("hidden");
+  if (elements.favoritesModal && !elements.favoritesModal.classList.contains("hidden")) {
+    elements.favoritesModal.style.zIndex = "999";
+  }
   document.body.style.overflow = "hidden";
   setTimeout(() => {
     elements.modalIframe!.src = getClipEmbedUrl(clip.url);
@@ -109,7 +112,11 @@ function closeClipModal() {
   if (!elements.modal || !elements.modalIframe) return;
   elements.modal.classList.add("hidden");
   elements.modalIframe.src = "";
-  document.body.style.overflow = "";
+  if (elements.favoritesModal && !elements.favoritesModal.classList.contains("hidden")) {
+    elements.favoritesModal.style.zIndex = "";
+  } else {
+    document.body.style.overflow = "";
+  }
   currentClipUrl = "";
   currentClipMeta = null;
   if (elements.modal) delete elements.modal.dataset.clipUrl;
@@ -264,13 +271,16 @@ export function initModal() {
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       if (
+        elements.modal &&
+        !elements.modal.classList.contains("hidden")
+      ) {
+        closeClipModal();
+      } else if (
         elements.favoritesModal &&
         !elements.favoritesModal.classList.contains("hidden")
       ) {
         elements.favoritesModal.classList.add("hidden");
         document.body.style.overflow = "";
-      } else {
-        closeClipModal();
       }
     }
   });
