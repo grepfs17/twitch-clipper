@@ -79,7 +79,13 @@ export function openClipModal(clip: any) {
   )
     return;
 
-  currentClipMeta = { url: clip.url, channel: clip.broadcaster_name, game: clip.game_name, title: clip.title, thumbnailUrl: clip.thumbnail_url };
+  currentClipMeta = {
+    url: clip.url,
+    channel: clip.broadcaster_name,
+    game: clip.game_name,
+    title: clip.title,
+    thumbnailUrl: clip.thumbnail_url,
+  };
   storeClipUrl(clip.url);
   const date = new Date(clip.created_at).toLocaleDateString(undefined, {
     month: "short",
@@ -88,7 +94,8 @@ export function openClipModal(clip: any) {
   });
 
   elements.modalTitle.textContent = clip.title;
-  if (elements.modalCreator) elements.modalCreator.textContent = clip.creator_name;
+  if (elements.modalCreator)
+    elements.modalCreator.textContent = clip.creator_name;
   elements.modalGame.textContent = clip.game_name;
   elements.modalDate.textContent = date;
   elements.modal.classList.remove("hidden");
@@ -255,7 +262,17 @@ export function initModal() {
   });
 
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeClipModal();
+    if (e.key === "Escape") {
+      if (
+        elements.favoritesModal &&
+        !elements.favoritesModal.classList.contains("hidden")
+      ) {
+        elements.favoritesModal.classList.add("hidden");
+        document.body.style.overflow = "";
+      } else {
+        closeClipModal();
+      }
+    }
   });
 
   document.addEventListener("click", () => {

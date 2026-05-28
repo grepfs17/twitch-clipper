@@ -1,9 +1,10 @@
 import { elements } from "./dom";
 import { openClipModal } from "./modal";
-import { toggleFavorite, isFavorite, type FavoriteClip } from "./favorites";
+import { toggleFavorite, isFavorite } from "./favorites";
 
 export let allClips: any[] = [];
 export let displayedClips: any[] = [];
+const clipIds = new Set<string>();
 
 const BATCH_SIZE = 50;
 let renderIndex = 0;
@@ -12,15 +13,17 @@ let observer: IntersectionObserver | null = null;
 
 export function setAllClips(val: any[]) {
   allClips = val;
+  clipIds.clear();
+  for (const c of val) clipIds.add(c.id);
 }
 export function setDisplayedClips(val: any[]) {
   displayedClips = val;
 }
 
 export function appendClips(newClips: any[]) {
-  const existingIds = new Set(allClips.map((c) => c.id));
-  const unique = newClips.filter((c) => !existingIds.has(c.id));
-  setAllClips([...allClips, ...unique]);
+  const unique = newClips.filter((c) => !clipIds.has(c.id));
+  for (const c of unique) clipIds.add(c.id);
+  allClips.push(...unique);
 }
 
 function buildClipCard(clip: any): HTMLDivElement {
@@ -76,7 +79,13 @@ function buildClipCard(clip: any): HTMLDivElement {
   updateFavIcon();
   favBtn.addEventListener("click", (e) => {
     e.stopPropagation();
-    toggleFavorite({ url: clip.url, channel: clip.broadcaster_name, game: clip.game_name, title: clip.title, thumbnailUrl: clip.thumbnail_url });
+    toggleFavorite({
+      url: clip.url,
+      channel: clip.broadcaster_name,
+      game: clip.game_name,
+      title: clip.title,
+      thumbnailUrl: clip.thumbnail_url,
+    });
     updateFavIcon();
   });
   card.addEventListener("click", () => openClipModal(clip));
@@ -145,7 +154,8 @@ export function renderClips() {
 
 export function applyFilters() {
   const category = elements.categoryFilter?.value || "all";
-  const searchText = elements.filterSearchInput?.value.trim().toLowerCase() || "";
+  const searchText =
+    elements.filterSearchInput?.value.trim().toLowerCase() || "";
   const sortBy = elements.sortFilter?.value || "views";
 
   let filtered = [...allClips];

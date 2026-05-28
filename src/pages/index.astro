@@ -3,7 +3,10 @@ import Layout from "../layouts/Layout.astro";
 import "../styles/index.css";
 ---
 
-<Layout title="Twitch Clip Explorer — Browse, Search & Download Twitch Clips" description="Browse, search, and download Twitch clips by channel. Filter top clips by popularity and category, download in multiple quality presets, and clip from any URL.">
+<Layout
+    title="Twitch Clip Explorer — Browse, Search & Download Twitch Clips"
+    description="Browse, search, and download Twitch clips by channel. Filter top clips by popularity and category, download in multiple quality presets, and clip from any URL."
+>
     <main>
         <div class="main-content">
             <header class="hero">
@@ -13,8 +16,9 @@ import "../styles/index.css";
                             twitch_clip_explorer --interactive
                         </p>
                         <h1 class="font-display">
-                            twitch_clip_explorer --channel=<span id="typewriterText"
-                            ></span><span class="cursor"></span>
+                            twitch_clip_explorer --channel=<span
+                                id="typewriterText"></span><span class="cursor"
+                            ></span>
                         </h1>
 
                         <div class="search-wrapper">
@@ -34,11 +38,26 @@ import "../styles/index.css";
                                     >SCAN</button
                                 >
                             </div>
-                            <button type="button" id="favoritesBtn" class="favorites-open-btn">
-                                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                            <button
+                                type="button"
+                                id="favoritesBtn"
+                                class="favorites-open-btn"
+                            >
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    width="14"
+                                    height="14"
+                                    fill="currentColor"
+                                    ><path
+                                        d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
+                                    ></path></svg
+                                >
                                 FAVORITES <span id="favoritesCount">0</span>
                             </button>
-                            <div id="recentSearches" class="recent-searches hidden">
+                            <div
+                                id="recentSearches"
+                                class="recent-searches hidden"
+                            >
                                 <span class="recent-label">recent</span>
                                 <ul id="recentList" class="recent-list"></ul>
                             </div>
@@ -104,14 +123,18 @@ import "../styles/index.css";
                                         type="button"
                                         id="categoryClear"
                                         class="autocomplete-clear hidden"
-                                        aria-label="Clear category">&times;</button
+                                        aria-label="Clear category"
+                                        >&times;</button
                                     >
                                     <input
                                         type="hidden"
                                         id="categoryFilter"
                                         value="all"
                                     />
-                                    <ul id="categoryList" class="autocomplete-list">
+                                    <ul
+                                        id="categoryList"
+                                        class="autocomplete-list"
+                                    >
                                     </ul>
                                 </div>
                             </div>
@@ -129,7 +152,8 @@ import "../styles/index.css";
                                         type="button"
                                         id="filterSearchClear"
                                         class="filter-search-clear hidden"
-                                        aria-label="Clear search">&times;</button
+                                        aria-label="Clear search"
+                                        >&times;</button
                                     >
                                 </div>
                             </div>
@@ -140,7 +164,8 @@ import "../styles/index.css";
                                     <button
                                         type="button"
                                         class="custom-select-trigger"
-                                        id="sortFilterTrigger">Most Views</button
+                                        id="sortFilterTrigger"
+                                        >Most Views</button
                                     >
                                     <input
                                         type="hidden"
@@ -159,7 +184,10 @@ import "../styles/index.css";
                             </div>
                         </div>
                         <div class="toolbar-right">
-                            <div id="cacheIndicator" class="cache-indicator hidden">
+                            <div
+                                id="cacheIndicator"
+                                class="cache-indicator hidden"
+                            >
                                 <svg
                                     viewBox="0 0 24 24"
                                     width="16"
@@ -206,8 +234,10 @@ import "../styles/index.css";
                             </div>
                         </div>
                         <div class="progress-info">
-                            <span id="progressLabel" class="progress-label"></span>
-                            <span id="progressStats" class="progress-stats"></span>
+                            <span id="progressLabel" class="progress-label"
+                            ></span>
+                            <span id="progressStats" class="progress-stats"
+                            ></span>
                         </div>
                     </div>
 
@@ -234,14 +264,28 @@ import "../styles/index.css";
                 aria-label="Close">&times;</button
             >
             <div class="modal-video-wrapper">
-                <iframe id="modalIframe" src="" frameborder="0" allowfullscreen
+                <iframe id="modalIframe" src="" style="border:0" allowfullscreen
                 ></iframe>
             </div>
             <div class="modal-body">
                 <div class="modal-title-row">
                     <h2 id="modalTitle" class="modal-title"></h2>
-                    <button type="button" id="modalFavBtn" class="modal-fav-btn" aria-label="Toggle favorite">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" class="fav-icon"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                    <button
+                        type="button"
+                        id="modalFavBtn"
+                        class="modal-fav-btn"
+                        aria-label="Toggle favorite"
+                    >
+                        <svg
+                            viewBox="0 0 24 24"
+                            width="18"
+                            height="18"
+                            fill="currentColor"
+                            class="fav-icon"
+                            ><path
+                                d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
+                            ></path></svg
+                        >
                     </button>
                 </div>
                 <div class="modal-meta">
@@ -371,11 +415,18 @@ import "../styles/index.css";
 
     <div id="favoritesModal" class="modal-overlay hidden">
         <div class="fav-modal-content">
-            <button type="button" id="favoritesCloseBtn" class="modal-close" aria-label="Close">&times;</button>
+            <button
+                type="button"
+                id="favoritesCloseBtn"
+                class="modal-close"
+                aria-label="Close">&times;</button
+            >
             <div class="fav-modal-body">
                 <div id="favoritesGrid" class="favorites-grid"></div>
                 <div id="favoritesEmpty" class="favorites-empty hidden">
-                    <p>No favorites yet. Click the star on any clip to save it.</p>
+                    <p>
+                        No favorites yet. Click the star on any clip to save it.
+                    </p>
                 </div>
             </div>
         </div>
@@ -384,6 +435,4 @@ import "../styles/index.css";
 
 <script>
     import "../scripts/index";
-    import "../scripts/clip-url";
-    import "../scripts/typewriter";
 </script>

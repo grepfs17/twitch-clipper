@@ -2,7 +2,8 @@ import type { APIRoute } from "astro";
 import { spawn } from "node:child_process";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { readdir, stat, unlink, mkdir, readFile } from "node:fs/promises";
+import { readdir, stat, unlink, mkdir } from "node:fs/promises";
+import { createReadStream } from "node:fs";
 import { randomUUID } from "node:crypto";
 
 const CLIP_SLUG_REGEX =
@@ -172,12 +173,13 @@ export const GET: APIRoute = async ({ request }) => {
 
         const filePath = join(tempDir, displayName);
         const fileStat = await stat(filePath);
-        const fileData = await readFile(filePath);
 
         console.log("[download] Success:", displayName, fileStat.size, "bytes");
 
+        const stream = createReadStream(filePath);
+
         resolve(
-          new Response(fileData, {
+          new Response(stream as any, {
             status: 200,
             headers: {
               "Content-Type": "video/mp4",

@@ -131,13 +131,18 @@ async function fetchWindow(
   let cursor = "";
 
   while (true) {
-    const data = await fetchClips(
-      channel,
-      range,
-      cursor,
-      win.startedAt,
-      win.endedAt,
-    );
+    let data: any;
+    try {
+      data = await fetchClips(
+        channel,
+        range,
+        cursor,
+        win.startedAt,
+        win.endedAt,
+      );
+    } catch {
+      break;
+    }
     if (!data || !data.clips || data.clips.length === 0) break;
 
     result.push(...data.clips);
@@ -166,7 +171,12 @@ async function fetchTopClips(
 
   while (true) {
     // timeRange="all", no date bounds → Twitch sorts by views descending
-    const data = await fetchClips(channel, "all", cursor);
+    let data: any;
+    try {
+      data = await fetchClips(channel, "all", cursor);
+    } catch {
+      break;
+    }
     if (!data || !data.clips || data.clips.length === 0) break;
 
     result.push(...data.clips);
@@ -253,7 +263,6 @@ async function loadAllClips() {
       const pct = Math.round((windowsProcessed / totalWindows) * 100);
       if (progressBar) progressBar.style.width = `${Math.min(pct, 100)}%`;
 
-      const totalSoFar = totalClipsBefore + backgroundClips.length;
       if (progressLabel) {
         progressLabel.textContent = `[${windowsProcessed}/${totalWindows}] ${pct}%`;
       }
