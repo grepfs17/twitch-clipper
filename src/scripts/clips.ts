@@ -62,7 +62,7 @@ function buildClipCard(clip: any): HTMLDivElement {
             </div>
         </div>
         <button type="button" class="fav-btn" data-clip-url="${clip.url}" aria-label="Toggle favorite">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" class="fav-icon"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" class="fav-icon"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
         </button>
     `;
   const favBtn = card.querySelector(".fav-btn") as HTMLButtonElement;

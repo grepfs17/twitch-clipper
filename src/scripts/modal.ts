@@ -26,6 +26,16 @@ function getClipEmbedUrl(clipUrl: string): string {
   return `https://clips.twitch.tv/embed?clip=${slug}&parent=${parent}&autoplay=true`;
 }
 
+function setEmbedQuality() {
+  const iframe = elements.modalIframe;
+  if (!iframe?.contentWindow) return;
+  iframe.contentWindow.postMessage(JSON.stringify({
+    event: "command",
+    func: "setQuality",
+    args: ["chunked"],
+  }), "*");
+}
+
 function initQualitySelector() {
   if (
     !elements.qualitySelectTrigger ||
@@ -112,15 +122,15 @@ export function openClipModal(clip: any) {
     elements.favoritesModal.style.zIndex = "999";
   }
   document.body.style.overflow = "hidden";
-  setTimeout(() => {
-    elements.modalIframe!.src = getClipEmbedUrl(clip.url);
-  }, 250);
+  elements.modalIframe!.onload = () => setEmbedQuality();
+  elements.modalIframe!.src = getClipEmbedUrl(clip.url);
 }
 
 function closeClipModal() {
   if (!elements.modal || !elements.modalIframe) return;
   elements.modal.classList.add("hidden");
   elements.modalIframe.src = "";
+  elements.modalIframe.onload = null;
   if (elements.favoritesModal && !elements.favoritesModal.classList.contains("hidden")) {
     elements.favoritesModal.style.zIndex = "";
   } else {
