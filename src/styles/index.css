@@ -609,6 +609,7 @@ input[type="text"]#channelInput::placeholder {
     line-height: 1.4;
     width: 100%;
     box-sizing: border-box;
+    cursor: pointer;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%237a5200'%3E%3Cpath stroke-linecap='square' stroke-linejoin='miter' stroke-width='2.5' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 0.4rem center;
