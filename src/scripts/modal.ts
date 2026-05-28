@@ -23,7 +23,7 @@ const qualityLabels: Record<string, string> = {
 function getClipEmbedUrl(clipUrl: string): string {
   const slug = clipUrl.split("/").pop() || "";
   const parent = window.location.hostname;
-  return `https://clips.twitch.tv/embed?clip=${slug}&parent=${parent}&autoplay=true`;
+  return `https://clips.twitch.tv/embed?clip=${slug}&parent=${parent}&autoplay=true&muted=false`;
 }
 
 function setEmbedQuality() {
@@ -33,6 +33,11 @@ function setEmbedQuality() {
     event: "command",
     func: "setQuality",
     args: ["chunked"],
+  }), "*");
+  iframe.contentWindow.postMessage(JSON.stringify({
+    event: "command",
+    func: "unMute",
+    args: [],
   }), "*");
 }
 
