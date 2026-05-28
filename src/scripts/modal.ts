@@ -34,13 +34,16 @@ function setEmbedQuality() {
     func: "setQuality",
     args: ["chunked"],
   }), "*");
-  setTimeout(() => {
-    iframe.contentWindow?.postMessage(JSON.stringify({
-      event: "command",
-      func: "unMute",
-      args: [],
-    }), "*");
-  }, 1500);
+}
+
+function unmuteOnInteraction() {
+  const iframe = elements.modalIframe;
+  if (!iframe?.contentWindow) return;
+  iframe.contentWindow.postMessage(JSON.stringify({
+    event: "command",
+    func: "unMute",
+    args: [],
+  }), "*");
 }
 
 function initQualitySelector() {
@@ -372,6 +375,9 @@ export function initModal() {
   elements.modalNotesToggle?.addEventListener("click", () => {
     elements.modalNotesSection?.classList.toggle("open");
   });
+
+  const videoWrapper = elements.modalIframe?.closest(".modal-video-wrapper");
+  videoWrapper?.addEventListener("click", () => unmuteOnInteraction());
 
   window.addEventListener("fav:openClip", ((e: CustomEvent) => {
     openClipModal(e.detail);
