@@ -141,12 +141,10 @@ export const GET: APIRoute = async ({ request }) => {
       try {
         const files = await readdir(tempDir);
         const videoFile =
-          findVideoFiles(files) || files.find((f) => /\.mp4/i.test(f));
-        const displayName = videoFile
-          ? videoFile.replace(/\.part$/i, "")
-          : null;
+          findVideoFiles(files) ||
+          files.find((f) => /\.(mp4|mp4_|webm|mkv)/i.test(f));
 
-        if (!displayName) {
+        if (!videoFile) {
           const allFiles = await readdir(tempDir).catch(() => []);
           console.error(
             "[download] No video files found in",
@@ -171,10 +169,11 @@ export const GET: APIRoute = async ({ request }) => {
           return;
         }
 
-        const filePath = join(tempDir, displayName);
+        const filePath = join(tempDir, videoFile);
         const fileStat = await stat(filePath);
+        const safeName = `${slug}.mp4`;
 
-        console.log("[download] Success:", displayName, fileStat.size, "bytes");
+        console.log("[download] Success:", videoFile, fileStat.size, "bytes");
 
         const stream = createReadStream(filePath);
 
@@ -183,7 +182,7 @@ export const GET: APIRoute = async ({ request }) => {
             status: 200,
             headers: {
               "Content-Type": "video/mp4",
-              "Content-Disposition": `attachment; filename="${displayName}"`,
+              "Content-Disposition": `attachment; filename="${safeName}"`,
               "Content-Length": fileStat.size.toString(),
             },
           }),
