@@ -1,5 +1,6 @@
 import { elements } from "./dom";
 import { openClipModal } from "./modal";
+import { toggleFavorite, isFavorite, type FavoriteClip } from "./favorites";
 
 export let allClips: any[] = [];
 export let displayedClips: any[] = [];
@@ -57,7 +58,27 @@ function buildClipCard(clip: any): HTMLDivElement {
                 <span class="clip-date">${date}</span>
             </div>
         </div>
+        <button type="button" class="fav-btn" data-clip-url="${clip.url}" aria-label="Toggle favorite">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" class="fav-icon"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+        </button>
     `;
+  const favBtn = card.querySelector(".fav-btn") as HTMLButtonElement;
+  const updateFavIcon = () => {
+    const icon = favBtn.querySelector(".fav-icon") as SVGElement;
+    if (isFavorite(clip.url)) {
+      icon.setAttribute("fill", "var(--amber)");
+      favBtn.classList.add("active");
+    } else {
+      icon.setAttribute("fill", "currentColor");
+      favBtn.classList.remove("active");
+    }
+  };
+  updateFavIcon();
+  favBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleFavorite({ url: clip.url, channel: clip.broadcaster_name, game: clip.game_name, title: clip.title, thumbnailUrl: clip.thumbnail_url });
+    updateFavIcon();
+  });
   card.addEventListener("click", () => openClipModal(clip));
   return card;
 }

@@ -31,6 +31,8 @@ export const elements = {
   modalIframe: document.getElementById("modalIframe") as HTMLIFrameElement,
   modalCloseBtn: document.getElementById("modalCloseBtn"),
   modalCopyBtn: document.getElementById("modalCopyBtn") as HTMLButtonElement,
+  modalOpenBtn: document.getElementById("modalOpenBtn") as HTMLAnchorElement,
+  modalFavBtn: document.getElementById("modalFavBtn") as HTMLButtonElement,
   modalDownloadBtn: document.getElementById(
     "modalDownloadBtn",
   ) as HTMLButtonElement,
@@ -54,4 +56,11 @@ export const elements = {
   cacheIndicator: document.getElementById("cacheIndicator"),
   cacheText: document.getElementById("cacheText") as HTMLSpanElement,
   cacheRefresh: document.getElementById("cacheRefresh") as HTMLButtonElement,
+
+  favoritesModal: document.getElementById("favoritesModal"),
+  favoritesBtn: document.getElementById("favoritesBtn") as HTMLButtonElement,
+  favoritesCloseBtn: document.getElementById("favoritesCloseBtn"),
+  favoritesGrid: document.getElementById("favoritesGrid"),
+  favoritesCount: document.getElementById("favoritesCount"),
+  favoritesEmpty: document.getElementById("favoritesEmpty"),
 };

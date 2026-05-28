@@ -1,6 +1,8 @@
 import { elements } from "./dom";
+import { isFavorite, toggleFavorite, type FavoriteClip } from "./favorites";
 
 let currentClipUrl = "";
+let currentClipMeta: FavoriteClip | null = null;
 let isDownloading = false;
 
 const qualityLabels: Record<string, string> = {
@@ -60,6 +62,13 @@ function closeAllSelects() {
   elements.qualitySelectTrigger?.classList.remove("open");
 }
 
+function storeClipUrl(url: string) {
+  currentClipUrl = url;
+  if (elements.modal) elements.modal.dataset.clipUrl = url;
+  if (elements.modalOpenBtn) elements.modalOpenBtn.href = url;
+  updateModalFavBtn();
+}
+
 export function openClipModal(clip: any) {
   if (
     !elements.modal ||
@@ -70,7 +79,8 @@ export function openClipModal(clip: any) {
   )
     return;
 
-  currentClipUrl = clip.url;
+  currentClipMeta = { url: clip.url, channel: clip.broadcaster_name, game: clip.game_name, title: clip.title, thumbnailUrl: clip.thumbnail_url };
+  storeClipUrl(clip.url);
   const date = new Date(clip.created_at).toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
@@ -94,6 +104,9 @@ function closeClipModal() {
   elements.modalIframe.src = "";
   document.body.style.overflow = "";
   currentClipUrl = "";
+  currentClipMeta = null;
+  if (elements.modal) delete elements.modal.dataset.clipUrl;
+  if (elements.modalOpenBtn) elements.modalOpenBtn.removeAttribute("href");
 }
 
 async function downloadClip(quality: string) {
@@ -216,6 +229,19 @@ async function downloadClip(quality: string) {
   }, 2000);
 }
 
+function updateModalFavBtn() {
+  const url = currentClipUrl || elements.modal?.dataset.clipUrl;
+  if (!elements.modalFavBtn || !url) return;
+  const icon = elements.modalFavBtn.querySelector(".fav-icon") as SVGElement;
+  if (isFavorite(url)) {
+    icon.setAttribute("fill", "var(--amber)");
+    elements.modalFavBtn.classList.add("active");
+  } else {
+    icon.setAttribute("fill", "currentColor");
+    elements.modalFavBtn.classList.remove("active");
+  }
+}
+
 function slugFromUrl(url: string): string {
   const match = url.match(/(?:clips\.twitch\.tv\/|.*clip\/)([\w-]+)/i);
   return match ? match[1] : "clip";
@@ -242,6 +268,14 @@ export function initModal() {
 
   elements.qualitySelectOptions?.addEventListener("click", (e) => {
     e.stopPropagation();
+  });
+
+  elements.modalFavBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const url = elements.modal?.dataset.clipUrl;
+    if (!url || !currentClipMeta) return;
+    toggleFavorite(currentClipMeta);
+    updateModalFavBtn();
   });
 
   elements.modalCopyBtn?.addEventListener("click", async () => {
@@ -272,4 +306,8 @@ export function initModal() {
   });
 
   initQualitySelector();
+
+  window.addEventListener("fav:openClip", ((e: CustomEvent) => {
+    openClipModal(e.detail);
+  }) as EventListener);
 }
