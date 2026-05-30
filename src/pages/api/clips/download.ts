@@ -31,6 +31,14 @@ function extractSlugFromUrl(clipUrl: string): string | null {
   return match ? match[1] : null;
 }
 
+function sanitizeFilename(name: string): string {
+  return name.replace(/[<>:"/\\|?*\x00-\x1f]/g, " ").trim().slice(0, 200);
+}
+
+function makeFilename(name: string): string {
+  return sanitizeFilename(name) + ".mp4";
+}
+
 function findVideoFiles(files: string[]): string | null {
   return files.find((f) => /\.(mp4|webm|mkv)$/i.test(f)) || null;
 }
@@ -48,6 +56,7 @@ async function cleanupDir(dir: string) {
 export const GET: APIRoute = async ({ request }) => {
   const url = new URL(request.url);
   const clipUrl = url.searchParams.get("url");
+  const clipTitle = url.searchParams.get("title") || "";
   const quality =
     QUALITY_TO_FORMAT[url.searchParams.get("quality") || "best"] || "best";
 
@@ -171,7 +180,9 @@ export const GET: APIRoute = async ({ request }) => {
 
         const filePath = join(tempDir, videoFile);
         const fileStat = await stat(filePath);
-        const safeName = `${slug}.mp4`;
+        const safeName = clipTitle
+          ? makeFilename(clipTitle)
+          : `${slug}.mp4`;
 
         console.log("[download] Success:", videoFile, fileStat.size, "bytes");
 
@@ -182,7 +193,7 @@ export const GET: APIRoute = async ({ request }) => {
             status: 200,
             headers: {
               "Content-Type": "video/mp4",
-              "Content-Disposition": `attachment; filename="${safeName}"`,
+              "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(safeName)}`,
               "Content-Length": fileStat.size.toString(),
             },
           }),

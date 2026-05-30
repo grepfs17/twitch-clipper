@@ -174,7 +174,7 @@ async function downloadClip(quality: string) {
 
   try {
     const response = await fetch(
-      `/api/clips/download?url=${encodeURIComponent(currentClipUrl)}&quality=${encodeURIComponent(quality)}`,
+      `/api/clips/download?url=${encodeURIComponent(currentClipUrl)}&quality=${encodeURIComponent(quality)}&title=${encodeURIComponent(currentClipMeta?.title || "")}`,
     );
 
     if (!response.ok) {
@@ -213,10 +213,10 @@ async function downloadClip(quality: string) {
 
       const blob = new Blob(chunks as BlobPart[]);
       const disposition = response.headers.get("Content-Disposition") || "";
-      const filenameMatch = disposition.match(/filename="?(.+)"?$/i);
+      const filenameMatch = disposition.match(/filename\*?=(?:UTF-8'')?([^"\n]+)/i);
       const filename = filenameMatch
-        ? filenameMatch[1]
-        : `${sanitizeFilename(currentClipMeta?.title || slugFromUrl(currentClipUrl))}.mp4`;
+        ? decodeURIComponent(filenameMatch[1])
+        : makeFilename(currentClipMeta?.title || slugFromUrl(currentClipUrl));
 
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -229,10 +229,10 @@ async function downloadClip(quality: string) {
     } else {
       const blob = await response.blob();
       const disposition = response.headers.get("Content-Disposition") || "";
-      const filenameMatch = disposition.match(/filename="?(.+)"?$/i);
+      const filenameMatch = disposition.match(/filename\*?=(?:UTF-8'')?([^"\n]+)/i);
       const filename = filenameMatch
-        ? filenameMatch[1]
-        : `${sanitizeFilename(currentClipMeta?.title || slugFromUrl(currentClipUrl))}.mp4`;
+        ? decodeURIComponent(filenameMatch[1])
+        : makeFilename(currentClipMeta?.title || slugFromUrl(currentClipUrl));
 
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -292,7 +292,11 @@ function slugFromUrl(url: string): string {
 }
 
 function sanitizeFilename(name: string): string {
-  return name.replace(/[<>:"/\\|?*\x00-\x1f]/g, "_").trim();
+  return name.replace(/[<>:"/\\|?*\x00-\x1f]/g, " ").trim();
+}
+
+function makeFilename(name: string): string {
+  return sanitizeFilename(name) + ".mp4";
 }
 
 export function initModal() {
