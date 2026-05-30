@@ -216,7 +216,7 @@ async function downloadClip(quality: string) {
       const filenameMatch = disposition.match(/filename="?(.+)"?$/i);
       const filename = filenameMatch
         ? filenameMatch[1]
-        : `${slugFromUrl(currentClipUrl)}.mp4`;
+        : `${sanitizeFilename(currentClipMeta?.title || slugFromUrl(currentClipUrl))}.mp4`;
 
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -232,7 +232,7 @@ async function downloadClip(quality: string) {
       const filenameMatch = disposition.match(/filename="?(.+)"?$/i);
       const filename = filenameMatch
         ? filenameMatch[1]
-        : `${slugFromUrl(currentClipUrl)}.mp4`;
+        : `${sanitizeFilename(currentClipMeta?.title || slugFromUrl(currentClipUrl))}.mp4`;
 
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -289,6 +289,10 @@ function updateModalFavBtn() {
 function slugFromUrl(url: string): string {
   const match = url.match(/(?:clips\.twitch\.tv\/|.*clip\/)([\w-]+)/i);
   return match ? match[1] : "clip";
+}
+
+function sanitizeFilename(name: string): string {
+  return name.replace(/[<>:"/\\|?*\x00-\x1f]/g, "_").trim();
 }
 
 export function initModal() {
