@@ -109,43 +109,62 @@ function storeClipUrl(url: string) {
 }
 
 export function openClipModal(clip: any) {
-  if (
-    !elements.modal ||
-    !elements.modalIframe ||
-    !elements.modalTitle ||
-    !elements.modalGame ||
-    !elements.modalDate
-  )
-    return;
+  if (!modalElementsReady()) return;
 
-  currentClipMeta = {
+  currentClipMeta = buildClipMeta(clip);
+  storeClipUrl(clip.url);
+
+  const date = formatClipDate(clip.created_at);
+  populateModalContent(clip, date);
+  setModalNotesSection(clip.url);
+  showModalAndIframe(clip);
+}
+
+function modalElementsReady(): boolean {
+  return !!(
+    elements.modal &&
+    elements.modalIframe &&
+    elements.modalTitle &&
+    elements.modalGame &&
+    elements.modalDate
+  );
+}
+
+function buildClipMeta(clip: any) {
+  return {
     url: clip.url,
     channel: clip.broadcaster_name,
     game: clip.game_name,
     title: clip.title,
     thumbnailUrl: clip.thumbnail_url,
   };
-  storeClipUrl(clip.url);
-  const date = new Date(clip.created_at).toLocaleDateString(undefined, {
+}
+
+function formatClipDate(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
     year: "numeric",
   });
+}
 
-  elements.modalTitle.textContent = clip.title;
-  if (elements.modalCreator)
-    elements.modalCreator.textContent = clip.creator_name;
-  elements.modalGame.textContent = clip.game_name;
-  elements.modalDate.textContent = date;
-  if (elements.modalNotes) {
-    elements.modalNotes.value = getNote(clip.url);
-  }
-  if (elements.modalNotesSection) {
-    const hasNotes = !!getNote(clip.url);
-    elements.modalNotesSection.classList.toggle("has-notes", hasNotes);
-    elements.modalNotesSection.classList.remove("open");
-  }
-  elements.modal.classList.remove("hidden");
+function populateModalContent(clip: any, date: string) {
+  elements.modalTitle!.textContent = clip.title;
+  if (elements.modalCreator) elements.modalCreator.textContent = clip.creator_name;
+  elements.modalGame!.textContent = clip.game_name;
+  elements.modalDate!.textContent = date;
+}
+
+function setModalNotesSection(clipUrl: string) {
+  if (!elements.modalNotesSection) return;
+  const hasNotes = !!getNote(clipUrl);
+  elements.modalNotesSection.classList.toggle("has-notes", hasNotes);
+  elements.modalNotesSection.classList.remove("open");
+  if (elements.modalNotes) elements.modalNotes.value = getNote(clipUrl);
+}
+
+function showModalAndIframe(clip: any) {
+  elements.modal!.classList.remove("hidden");
   if (
     elements.favoritesModal &&
     !elements.favoritesModal.classList.contains("hidden")

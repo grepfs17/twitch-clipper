@@ -220,7 +220,6 @@ async function loadAllClips() {
     "progressStats",
   ) as HTMLSpanElement;
 
-  // Show the fixed progress bar at the bottom
   progressArea?.classList.remove("hidden");
   if (progressBar) progressBar.style.width = "0%";
 
@@ -228,11 +227,25 @@ async function loadAllClips() {
   const totalClipsBefore = allClips.length;
   const totalWindows = pendingWindows.length;
   const startTime = Date.now();
+  let windowsProcessed = 0;
 
-  // Process windows concurrently (4 at a time)
+  const updateProgress = () => {
+    const pct = Math.round((windowsProcessed / totalWindows) * 100);
+    if (progressBar) progressBar.style.width = `${Math.min(pct, 100)}%`;
+    if (progressLabel)
+      progressLabel.textContent = `[${windowsProcessed}/${totalWindows}] ${pct}%`;
+    if (progressStats) {
+      const elapsed = Math.round((Date.now() - startTime) / 1000);
+      const left = totalWindows - windowsProcessed;
+      progressStats.textContent = formatEta(elapsed, left, windowsProcessed);
+    }
+    if (elements.loaderText) {
+      elements.loaderText.textContent = `Loading window ${windowsProcessed}/${totalWindows} — ${(totalClipsBefore + backgroundClips.length).toLocaleString()} clips`;
+    }
+  };
+
   const windows = [...pendingWindows];
   pendingWindows.length = 0;
-  let windowsProcessed = 0;
 
   await asyncPool(
     4,
@@ -243,30 +256,7 @@ async function loadAllClips() {
     },
     () => {
       windowsProcessed++;
-
-      const pct = Math.round((windowsProcessed / totalWindows) * 100);
-      if (progressBar) progressBar.style.width = `${Math.min(pct, 100)}%`;
-
-      if (progressLabel) {
-        progressLabel.textContent = `[${windowsProcessed}/${totalWindows}] ${pct}%`;
-      }
-
-      if (progressStats) {
-        const elapsed = Math.round((Date.now() - startTime) / 1000);
-        const left = totalWindows - windowsProcessed;
-        if (windowsProcessed > 1 && elapsed > 3) {
-          const avg = elapsed / windowsProcessed;
-          const est = Math.round(avg * left);
-          progressStats.textContent =
-            est >= 60 ? `~${Math.round(est / 60)}m ${est % 60}s` : `~${est}s`;
-        } else {
-          progressStats.textContent = `${left} window${left !== 1 ? "s" : ""}`;
-        }
-      }
-
-      if (elements.loaderText) {
-        elements.loaderText.textContent = `Loading window ${windowsProcessed}/${totalWindows} — ${(totalClipsBefore + backgroundClips.length).toLocaleString()} clips`;
-      }
+      updateProgress();
     },
   );
 
@@ -275,34 +265,39 @@ async function loadAllClips() {
     progressLabel.textContent = "✓ Complete — saving to cache…";
   if (progressStats) progressStats.textContent = "";
 
-  if (backgroundClips.length > 0) {
-    appendClips(backgroundClips);
-  }
+  if (backgroundClips.length > 0) appendClips(backgroundClips);
 
   if (elements.loader) elements.loader.classList.add("hidden");
   if (elements.loaderText) elements.loaderText.textContent = "";
   elements.loadOlderBtn!.disabled = false;
   syncLoadAllBtn();
 
-  // Apply current filters to the full merged result
   updateCategories();
   applyFilters();
 
-  // Automatically save to cache after background loading completes
+  await saveAndAnnounceCache(currentChannel);
+
+  setTimeout(() => progressArea?.classList.add("hidden"), 2000);
+}
+
+async function saveAndAnnounceCache(channel: string) {
   try {
-    await saveCache(currentChannel, allClips);
+    await saveCache(channel, allClips);
     terminalToast(
-      `${allClips.length.toLocaleString()} clips cached for ${currentChannel}.`,
+      `${allClips.length.toLocaleString()} clips cached for ${channel}.`,
     );
   } catch (err) {
     console.error("Cache save failed:", err);
     terminalToast("Cache save failed. Storage may be full.");
   }
+}
 
-  // Hide progress area after a short delay
-  setTimeout(() => {
-    progressArea?.classList.add("hidden");
-  }, 2000);
+function formatEta(elapsedSec: number, left: number, processed: number): string {
+  if (processed <= 1 || elapsedSec <= 3) {
+    return `${left} window${left !== 1 ? "s" : ""}`;
+  }
+  const est = Math.round((elapsedSec / processed) * left);
+  return est >= 60 ? `~${Math.round(est / 60)}m ${est % 60}s` : `~${est}s`;
 }
 
 // Main search
@@ -328,70 +323,81 @@ async function handleSearch() {
 
   const range = elements.rangeFilter?.value || "all";
 
-  // Check cache (only for "all" since that's what we persist)
-  if (range === "all") {
-    const cached = await loadCache(channel);
-    if (cached) {
-      const age = Math.round(
-        (Date.now() - new Date(cached.savedAt).getTime()) / 1000 / 60,
-      );
-      const ageLabel =
-        age < 60
-          ? `${age}min ago`
-          : age < 1440
-            ? `${Math.round(age / 60)}h ago`
-            : `${Math.round(age / 1440)}d ago`;
+  if (range === "all" && (await loadFromCacheIfPresent(channel))) return;
 
-      elements.loader?.classList.add("hidden");
+  const { firstBatch, queuedWindows } = await fetchInitialBatch(channel, range);
+  pendingWindows = queuedWindows;
 
-      const useCached = await terminalConfirm(
-        `Found <strong>${cached.clips.length.toLocaleString()} cached clips</strong> for <strong>${channel}</strong> (saved ${ageLabel}). Load from cache?`,
-        "USE CACHE",
-        "FETCH FRESH",
-      );
+  elements.loader?.classList.add("hidden");
+  if (elements.loaderText) elements.loaderText.textContent = "";
 
-      if (useCached) {
-        addRecent(channel);
-        setAllClips(cached.clips);
-        showCacheIndicator(cached.savedAt);
-        updateCategories();
-        applyFilters();
-        // No pending windows, ull library is already loaded
-        syncLoadAllBtn();
-        return;
-      }
+  applySearchResults(channel, firstBatch);
+}
 
-      // User chose fresh — re-show loader
-      elements.loader?.classList.remove("hidden");
-    }
+function formatCacheAge(min: number): string {
+  if (min < 60) return `${min}min ago`;
+  if (min < 1440) return `${Math.round(min / 60)}h ago`;
+  return `${Math.round(min / 1440)}d ago`;
+}
+
+async function loadFromCacheIfPresent(channel: string): Promise<boolean> {
+  const cached = await loadCache(channel);
+  if (!cached) return false;
+
+  const ageMin = Math.round(
+    (Date.now() - new Date(cached.savedAt).getTime()) / 1000 / 60,
+  );
+  const ageLabel = formatCacheAge(ageMin);
+
+  elements.loader?.classList.add("hidden");
+
+  const useCached = await terminalConfirm(
+    `Found <strong>${cached.clips.length.toLocaleString()} cached clips</strong> for <strong>${channel}</strong> (saved ${ageLabel}). Load from cache?`,
+    "USE CACHE",
+    "FETCH FRESH",
+  );
+
+  if (!useCached) {
+    elements.loader?.classList.remove("hidden");
+    return false;
   }
 
-  // Fetch initial clips
-  let firstBatch: any[];
+  addRecent(channel);
+  setAllClips(cached.clips);
+  showCacheIndicator(cached.savedAt);
+  updateCategories();
+  applyFilters();
+  // No pending windows, full library is already loaded
+  syncLoadAllBtn();
+  return true;
+}
 
+async function fetchInitialBatch(
+  channel: string,
+  range: string,
+): Promise<{ firstBatch: any[]; queuedWindows: TimeWindow[] }> {
   if (range === "all") {
     // Unbounded → Twitch returns by view count: user sees top clips instantly
-    firstBatch = await fetchTopClips(channel, (n) => {
+    const firstBatch = await fetchTopClips(channel, (n) => {
       if (elements.loaderText) {
         elements.loaderText.textContent = `Loading top clips… ${n}`;
       }
     });
     // Queue ALL time windows so "Load all clips" covers full history
-    pendingWindows = buildWindows("all");
-  } else {
-    // Time-bounded ranges: use windowed strategy from the start
-    const windows = buildWindows(range);
-    firstBatch = await fetchWindow(channel, range, windows[0], (n) => {
-      if (elements.loaderText) {
-        elements.loaderText.textContent = `Loading… ${n} clips`;
-      }
-    });
-    pendingWindows = windows.slice(1);
+    return { firstBatch, queuedWindows: buildWindows("all") };
   }
 
-  elements.loader?.classList.add("hidden");
-  if (elements.loaderText) elements.loaderText.textContent = "";
+  // Time-bounded ranges: use windowed strategy from the start
+  const windows = buildWindows(range);
+  const firstBatch = await fetchWindow(channel, range, windows[0], (n) => {
+    if (elements.loaderText) {
+      elements.loaderText.textContent = `Loading… ${n} clips`;
+    }
+  });
+  return { firstBatch, queuedWindows: windows.slice(1) };
+}
 
+function applySearchResults(channel: string, firstBatch: any[]) {
   if (firstBatch.length > 0) {
     addRecent(channel);
     setAllClips(firstBatch);

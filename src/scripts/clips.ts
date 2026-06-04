@@ -159,34 +159,36 @@ export function applyFilters() {
   const sortBy = elements.sortFilter?.value || "views";
 
   let filtered = [...allClips];
-
-  if (category !== "all") {
-    filtered = filtered.filter((c) => c.game_name === category);
-  }
-
-  if (searchText) {
-    filtered = filtered.filter(
-      (c) =>
-        c.title?.toLowerCase().includes(searchText) ||
-        c.creator_name?.toLowerCase().includes(searchText) ||
-        c.game_name?.toLowerCase().includes(searchText),
-    );
-  }
-
-  if (sortBy === "views") {
-    filtered.sort((a, b) => b.view_count - a.view_count);
-  } else if (sortBy === "latest") {
-    filtered.sort(
-      (a, b) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-    );
-  } else if (sortBy === "oldest") {
-    filtered.sort(
-      (a, b) =>
-        new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
-    );
-  }
+  if (category !== "all") filtered = filterByCategory(filtered, category);
+  if (searchText) filtered = filterBySearch(filtered, searchText);
+  filtered = sortClips(filtered, sortBy);
 
   setDisplayedClips(filtered);
   renderClips();
+}
+
+function filterByCategory(clips: any[], category: string): any[] {
+  return clips.filter((c) => c.game_name === category);
+}
+
+function filterBySearch(clips: any[], searchText: string): any[] {
+  return clips.filter(
+    (c) =>
+      c.title?.toLowerCase().includes(searchText) ||
+      c.creator_name?.toLowerCase().includes(searchText) ||
+      c.game_name?.toLowerCase().includes(searchText),
+  );
+}
+
+const SORT_COMPARATORS: Record<string, (a: any, b: any) => number> = {
+  views: (a, b) => b.view_count - a.view_count,
+  latest: (a, b) =>
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+  oldest: (a, b) =>
+    new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+};
+
+function sortClips(clips: any[], sortBy: string): any[] {
+  const cmp = SORT_COMPARATORS[sortBy];
+  return cmp ? [...clips].sort(cmp) : clips;
 }
