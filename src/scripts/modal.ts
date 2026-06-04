@@ -29,7 +29,26 @@ function getClipEmbedUrl(clipUrl: string): string {
 function sendEmbedCommand(func: string, args: any[] = []) {
   const iframe = elements.modalIframe;
   if (!iframe?.contentWindow) return;
-  iframe.contentWindow.postMessage(JSON.stringify({ event: "command", func, args }), "*");
+  iframe.contentWindow.postMessage(
+    JSON.stringify({ event: "command", func, args }),
+    "*",
+  );
+}
+function saveBlob(blob: Blob, response: Response) {
+  const disposition = response.headers.get("Content-Disposition") || "";
+  const filenameMatch = disposition.match(/filename\*?=(?:UTF-8'')?([^"\n]+)/i);
+  const filename = filenameMatch
+    ? decodeURIComponent(filenameMatch[1])
+    : makeFilename(currentClipMeta?.title || slugFromUrl(currentClipUrl));
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 function onEmbedReady(cb: () => void) {
@@ -127,7 +146,10 @@ export function openClipModal(clip: any) {
     elements.modalNotesSection.classList.remove("open");
   }
   elements.modal.classList.remove("hidden");
-  if (elements.favoritesModal && !elements.favoritesModal.classList.contains("hidden")) {
+  if (
+    elements.favoritesModal &&
+    !elements.favoritesModal.classList.contains("hidden")
+  ) {
     elements.favoritesModal.style.zIndex = "999";
   }
   document.body.style.overflow = "hidden";
@@ -142,7 +164,10 @@ function closeClipModal() {
   elements.modal.classList.add("hidden");
   elements.modalIframe.src = "";
   elements.modalIframe.onload = null;
-  if (elements.favoritesModal && !elements.favoritesModal.classList.contains("hidden")) {
+  if (
+    elements.favoritesModal &&
+    !elements.favoritesModal.classList.contains("hidden")
+  ) {
     elements.favoritesModal.style.zIndex = "";
   } else {
     document.body.style.overflow = "";
@@ -211,37 +236,9 @@ async function downloadClip(quality: string) {
         progressText.textContent = `${pct}%`;
       }
 
-      const blob = new Blob(chunks as BlobPart[]);
-      const disposition = response.headers.get("Content-Disposition") || "";
-      const filenameMatch = disposition.match(/filename\*?=(?:UTF-8'')?([^"\n]+)/i);
-      const filename = filenameMatch
-        ? decodeURIComponent(filenameMatch[1])
-        : makeFilename(currentClipMeta?.title || slugFromUrl(currentClipUrl));
-
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      saveBlob(new Blob(chunks as BlobPart[]), response);
     } else {
-      const blob = await response.blob();
-      const disposition = response.headers.get("Content-Disposition") || "";
-      const filenameMatch = disposition.match(/filename\*?=(?:UTF-8'')?([^"\n]+)/i);
-      const filename = filenameMatch
-        ? decodeURIComponent(filenameMatch[1])
-        : makeFilename(currentClipMeta?.title || slugFromUrl(currentClipUrl));
-
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      saveBlob(await response.blob(), response);
     }
 
     progressFill.style.width = "100%";
@@ -308,10 +305,7 @@ export function initModal() {
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
-      if (
-        elements.modal &&
-        !elements.modal.classList.contains("hidden")
-      ) {
+      if (elements.modal && !elements.modal.classList.contains("hidden")) {
         closeClipModal();
       } else if (
         elements.favoritesModal &&
@@ -377,7 +371,10 @@ export function initModal() {
       saveNote(currentClipUrl, elements.modalNotes.value);
     }
     if (elements.modalNotesSection) {
-      elements.modalNotesSection.classList.toggle("has-notes", !!elements.modalNotes.value.trim());
+      elements.modalNotesSection.classList.toggle(
+        "has-notes",
+        !!elements.modalNotes.value.trim(),
+      );
     }
   });
 
