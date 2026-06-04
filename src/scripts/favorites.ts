@@ -40,7 +40,7 @@ export function isFavorite(clipUrl: string): boolean {
   return _favUrls.has(clipUrl);
 }
 
-export function addFavorite(clip: FavoriteClip) {
+function addFavorite(clip: FavoriteClip) {
   let list = loadFavorites();
   if (!list.some((f) => f.url === clip.url)) {
     list = [clip, ...list];
@@ -50,7 +50,7 @@ export function addFavorite(clip: FavoriteClip) {
   updateButtonCount();
 }
 
-export function removeFavorite(clipUrl: string) {
+function removeFavorite(clipUrl: string) {
   let list = loadFavorites();
   list = list.filter((f) => f.url !== clipUrl);
   saveFavorites(list);
@@ -64,10 +64,6 @@ export function toggleFavorite(clip: FavoriteClip) {
   } else {
     addFavorite(clip);
   }
-}
-
-export function getFavorites(): FavoriteClip[] {
-  return loadFavorites();
 }
 
 function openFavoritesModal() {

@@ -3,7 +3,7 @@ import { openClipModal } from "./modal";
 import { toggleFavorite, isFavorite } from "./favorites";
 
 export let allClips: any[] = [];
-export let displayedClips: any[] = [];
+let displayedClips: any[] = [];
 const clipIds = new Set<string>();
 
 const BATCH_SIZE = 50;
