@@ -2,9 +2,17 @@
 let _cachedToken: string | null = null;
 let _tokenExpiresAt = 0; // unix ms
 
+function getTwitchClientId(): string {
+  const clientId = process.env.TWITCH_CLIENT_ID;
+  if (!clientId) {
+    throw new Error("TWITCH_CLIENT_ID not set in environment variables");
+  }
+  return clientId;
+}
+
 export async function getAccessToken() {
-  const clientId = import.meta.env.TWITCH_CLIENT_ID;
-  const clientSecret = import.meta.env.TWITCH_CLIENT_SECRET;
+  const clientId = process.env.TWITCH_CLIENT_ID;
+  const clientSecret = process.env.TWITCH_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
     throw new Error("Twitch credentials not found in environment variables");
@@ -39,7 +47,7 @@ export async function getAccessToken() {
 }
 
 export async function getBroadcasterId(login: string, token: string) {
-  const clientId = import.meta.env.TWITCH_CLIENT_ID;
+  const clientId = getTwitchClientId();
 
   const response = await fetch(
     `https://api.twitch.tv/helix/users?login=${login}`,
@@ -73,7 +81,7 @@ export async function getClips(
     after?: string;
   } = {},
 ) {
-  const clientId = import.meta.env.TWITCH_CLIENT_ID;
+  const clientId = getTwitchClientId();
   const url = new URL("https://api.twitch.tv/helix/clips");
 
   url.searchParams.append("broadcaster_id", broadcasterId);
@@ -100,7 +108,7 @@ export async function getClips(
 export async function getGames(gameIds: string[], token: string) {
   if (gameIds.length === 0) return [];
 
-  const clientId = import.meta.env.TWITCH_CLIENT_ID;
+  const clientId = getTwitchClientId();
   const url = new URL("https://api.twitch.tv/helix/games");
 
   // Twitch allows up to 100 IDs per request

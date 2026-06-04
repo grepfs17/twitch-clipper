@@ -34,7 +34,7 @@ export const GET: APIRoute = async ({ request }) => {
 
   try {
     const token = await getAccessToken();
-    const clientId = import.meta.env.TWITCH_CLIENT_ID;
+    const clientId = process.env.TWITCH_CLIENT_ID!;
 
     const response = await fetch(
       `https://api.twitch.tv/helix/clips?id=${slug}`,
