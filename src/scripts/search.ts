@@ -204,25 +204,56 @@ async function asyncPool<T>(
 async function loadAllClips() {
   if (!currentChannel || pendingWindows.length === 0) return;
 
+  setLoadOlderButton("Loading…", true);
+  showLoader("Preparing to load all clips…");
+
+  const els = getLoadAllProgressElements();
+  els.progressArea?.classList.remove("hidden");
+  if (els.progressBar) els.progressBar.style.width = "0%";
+
   const range = elements.rangeFilter?.value || "all";
-  elements.loadOlderBtn!.disabled = true;
-  elements.loadOlderBtn!.textContent = "Loading…";
+  const backgroundClips = await runLoadAllWindowPool(range, els);
+
+  finalizeLoadAll(backgroundClips, els);
+  updateCategories();
+  applyFilters();
+
+  await saveAndAnnounceCache(currentChannel);
+  setTimeout(() => els.progressArea?.classList.add("hidden"), 2000);
+}
+
+function setLoadOlderButton(text: string, disabled: boolean) {
+  if (elements.loadOlderBtn) {
+    elements.loadOlderBtn.disabled = disabled;
+    elements.loadOlderBtn.textContent = text;
+  }
+}
+
+function showLoader(text: string) {
   if (elements.loader) elements.loader.classList.remove("hidden");
-  if (elements.loaderText)
-    elements.loaderText.textContent = "Preparing to load all clips…";
+  if (elements.loaderText) elements.loaderText.textContent = text;
+}
 
-  const progressArea = document.getElementById("progressArea");
-  const progressBar = document.getElementById("progressBar") as HTMLDivElement;
-  const progressLabel = document.getElementById(
-    "progressLabel",
-  ) as HTMLSpanElement;
-  const progressStats = document.getElementById(
-    "progressStats",
-  ) as HTMLSpanElement;
+interface LoadAllProgressEls {
+  progressArea: HTMLElement | null;
+  progressBar: HTMLElement | null;
+  progressLabel: HTMLElement | null;
+  progressStats: HTMLElement | null;
+}
 
-  progressArea?.classList.remove("hidden");
-  if (progressBar) progressBar.style.width = "0%";
+function getLoadAllProgressElements(): LoadAllProgressEls {
+  return {
+    progressArea: document.getElementById("progressArea"),
+    progressBar: document.getElementById("progressBar"),
+    progressLabel: document.getElementById("progressLabel"),
+    progressStats: document.getElementById("progressStats"),
+  };
+}
 
+async function runLoadAllWindowPool(
+  range: string,
+  els: LoadAllProgressEls,
+): Promise<any[]> {
   const backgroundClips: any[] = [];
   const totalClipsBefore = allClips.length;
   const totalWindows = pendingWindows.length;
@@ -231,13 +262,13 @@ async function loadAllClips() {
 
   const updateProgress = () => {
     const pct = Math.round((windowsProcessed / totalWindows) * 100);
-    if (progressBar) progressBar.style.width = `${Math.min(pct, 100)}%`;
-    if (progressLabel)
-      progressLabel.textContent = `[${windowsProcessed}/${totalWindows}] ${pct}%`;
-    if (progressStats) {
+    if (els.progressBar) els.progressBar.style.width = `${Math.min(pct, 100)}%`;
+    if (els.progressLabel)
+      els.progressLabel.textContent = `[${windowsProcessed}/${totalWindows}] ${pct}%`;
+    if (els.progressStats) {
       const elapsed = Math.round((Date.now() - startTime) / 1000);
       const left = totalWindows - windowsProcessed;
-      progressStats.textContent = formatEta(elapsed, left, windowsProcessed);
+      els.progressStats.textContent = formatEta(elapsed, left, windowsProcessed);
     }
     if (elements.loaderText) {
       elements.loaderText.textContent = `Loading window ${windowsProcessed}/${totalWindows} — ${(totalClipsBefore + backgroundClips.length).toLocaleString()} clips`;
@@ -260,24 +291,21 @@ async function loadAllClips() {
     },
   );
 
-  if (progressBar) progressBar.style.width = "100%";
-  if (progressLabel)
-    progressLabel.textContent = "✓ Complete — saving to cache…";
-  if (progressStats) progressStats.textContent = "";
+  return backgroundClips;
+}
+
+function finalizeLoadAll(backgroundClips: any[], els: LoadAllProgressEls) {
+  if (els.progressBar) els.progressBar.style.width = "100%";
+  if (els.progressLabel)
+    els.progressLabel.textContent = "✓ Complete — saving to cache…";
+  if (els.progressStats) els.progressStats.textContent = "";
 
   if (backgroundClips.length > 0) appendClips(backgroundClips);
 
   if (elements.loader) elements.loader.classList.add("hidden");
   if (elements.loaderText) elements.loaderText.textContent = "";
-  elements.loadOlderBtn!.disabled = false;
+  setLoadOlderButton("Load all clips", false);
   syncLoadAllBtn();
-
-  updateCategories();
-  applyFilters();
-
-  await saveAndAnnounceCache(currentChannel);
-
-  setTimeout(() => progressArea?.classList.add("hidden"), 2000);
 }
 
 async function saveAndAnnounceCache(channel: string) {
@@ -307,6 +335,20 @@ async function handleSearch() {
   if (!channel) return;
 
   currentChannel = channel;
+  resetSearchUI();
+
+  const range = elements.rangeFilter?.value || "all";
+
+  if (range === "all" && (await loadFromCacheIfPresent(channel))) return;
+
+  const { firstBatch, queuedWindows } = await fetchInitialBatch(channel, range);
+  pendingWindows = queuedWindows;
+
+  hideLoader();
+  applySearchResults(channel, firstBatch);
+}
+
+function resetSearchUI() {
   pendingWindows = [];
   syncLoadAllBtn();
   setAllClips([]);
@@ -320,18 +362,11 @@ async function handleSearch() {
   elements.loader?.classList.remove("hidden");
   elements.emptyState?.classList.add("hidden");
   if (elements.loaderText) elements.loaderText.textContent = "";
+}
 
-  const range = elements.rangeFilter?.value || "all";
-
-  if (range === "all" && (await loadFromCacheIfPresent(channel))) return;
-
-  const { firstBatch, queuedWindows } = await fetchInitialBatch(channel, range);
-  pendingWindows = queuedWindows;
-
+function hideLoader() {
   elements.loader?.classList.add("hidden");
   if (elements.loaderText) elements.loaderText.textContent = "";
-
-  applySearchResults(channel, firstBatch);
 }
 
 function formatCacheAge(min: number): string {

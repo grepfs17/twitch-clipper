@@ -203,84 +203,125 @@ async function downloadClip(quality: string) {
 
   const btn = elements.modalDownloadBtn!;
   const originalHTML = btn.innerHTML;
-  btn.innerHTML = `
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="animation: spin 1s linear infinite"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
-        Downloading...
-    `;
-  btn.disabled = true;
-
   const progressEl = elements.downloadProgress!;
   const progressFill = elements.downloadProgressFill!;
   const progressText = elements.downloadProgressText!;
-  progressEl.style.display = "flex";
-  progressFill.style.width = "0%";
-  progressText.textContent = "0%";
+  setDownloadButtonBusy(btn);
+  showProgressBar(progressEl, progressFill, progressText);
 
   try {
-    const response = await fetch(
-      `/api/clips/download?url=${encodeURIComponent(currentClipUrl)}&quality=${encodeURIComponent(quality)}&title=${encodeURIComponent(currentClipMeta?.title || "")}`,
-    );
+    const response = await fetch(buildDownloadUrl(currentClipUrl, quality, currentClipMeta?.title));
+    if (!response.ok) throw new Error(await extractErrorMessage(response));
 
-    if (!response.ok) {
-      let errorMessage = "Download failed";
-      try {
-        const text = await response.text();
-        try {
-          const errorData = JSON.parse(text);
-          errorMessage = errorData.error || errorMessage;
-        } catch {
-          errorMessage = text.slice(0, 200) || errorMessage;
-        }
-      } catch {
-        errorMessage = `Server error ${response.status}`;
-      }
-      throw new Error(errorMessage);
-    }
-
-    const contentLength = response.headers.get("content-length");
-    const total = contentLength ? parseInt(contentLength) : 0;
-    let downloaded = 0;
-
-    if (total > 0 && response.body) {
-      const reader = response.body.getReader();
-      const chunks: Uint8Array[] = [];
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        chunks.push(value);
-        downloaded += value.length;
-        const pct = Math.round((downloaded / total) * 100);
-        progressFill.style.width = `${pct}%`;
-        progressText.textContent = `${pct}%`;
-      }
-
-      saveBlob(new Blob(chunks as BlobPart[]), response);
-    } else {
-      saveBlob(await response.blob(), response);
-    }
+    const total = parseInt(response.headers.get("content-length") || "0") || 0;
+    const blob = await readResponseAsBlob(response, total, progressFill, progressText);
+    saveBlob(blob, response);
 
     progressFill.style.width = "100%";
     progressText.textContent = "100%";
   } catch (err: any) {
-    const btn2 = elements.modalDownloadBtn!;
-    btn2.innerHTML = `
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-            ${err.message || "Error"}
-        `;
-    btn2.disabled = false;
-    setTimeout(() => {
-      btn2.innerHTML = originalHTML;
-    }, 4000);
-    isDownloading = false;
-    progressEl.style.display = "none";
+    showDownloadError(btn, originalHTML, err.message, progressEl);
     return;
   }
 
-  btn.innerHTML = `
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-        Downloaded!
-    `;
+  showDownloadSuccess(btn, originalHTML, progressEl);
+}
+
+function buildDownloadUrl(clipUrl: string, quality: string, title?: string) {
+  const params = new URLSearchParams({
+    url: clipUrl,
+    quality,
+    title: title || "",
+  });
+  return `/api/clips/download?${params.toString()}`;
+}
+
+async function extractErrorMessage(response: Response): Promise<string> {
+  try {
+    const text = await response.text();
+    try {
+      return JSON.parse(text).error || text.slice(0, 200) || "Download failed";
+    } catch {
+      return text.slice(0, 200) || "Download failed";
+    }
+  } catch {
+    return `Server error ${response.status}`;
+  }
+}
+
+async function readResponseAsBlob(
+  response: Response,
+  total: number,
+  progressFill: HTMLElement,
+  progressText: HTMLElement,
+): Promise<Blob> {
+  if (total > 0 && response.body) {
+    const chunks = await streamWithProgress(response.body.getReader(), total, progressFill, progressText);
+    return new Blob(chunks as BlobPart[]);
+  }
+  return await response.blob();
+}
+
+async function streamWithProgress(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  total: number,
+  progressFill: HTMLElement,
+  progressText: HTMLElement,
+): Promise<Uint8Array[]> {
+  const chunks: Uint8Array[] = [];
+  let downloaded = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    downloaded += value.length;
+    const pct = Math.round((downloaded / total) * 100);
+    progressFill.style.width = `${pct}%`;
+    progressText.textContent = `${pct}%`;
+  }
+  return chunks;
+}
+
+const SPINNER_SVG = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="animation: spin 1s linear infinite"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>`;
+const ERROR_SVG = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>`;
+const CHECK_SVG = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`;
+
+function setDownloadButtonBusy(btn: HTMLButtonElement) {
+  btn.innerHTML = `${SPINNER_SVG} Downloading...`;
+  btn.disabled = true;
+}
+
+function showProgressBar(
+  progressEl: HTMLElement,
+  progressFill: HTMLElement,
+  progressText: HTMLElement,
+) {
+  progressEl.style.display = "flex";
+  progressFill.style.width = "0%";
+  progressText.textContent = "0%";
+}
+
+function showDownloadError(
+  btn: HTMLButtonElement,
+  originalHTML: string,
+  message: string,
+  progressEl: HTMLElement,
+) {
+  btn.innerHTML = `${ERROR_SVG} ${message || "Error"}`;
+  btn.disabled = false;
+  setTimeout(() => {
+    btn.innerHTML = originalHTML;
+  }, 4000);
+  isDownloading = false;
+  progressEl.style.display = "none";
+}
+
+function showDownloadSuccess(
+  btn: HTMLButtonElement,
+  originalHTML: string,
+  progressEl: HTMLElement,
+) {
+  btn.innerHTML = `${CHECK_SVG} Downloaded!`;
   setTimeout(() => {
     btn.innerHTML = originalHTML;
     btn.disabled = false;
