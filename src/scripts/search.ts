@@ -165,29 +165,13 @@ async function fetchTopClips(
   channel: string,
   onProgress?: (n: number) => void,
 ): Promise<any[]> {
-  const maxClips = parseInt(import.meta.env.PUBLIC_MAX_CLIPS || "50000", 10);
-  const result: any[] = [];
-  let cursor = "";
-
-  while (true) {
-    // timeRange="all", no date bounds → Twitch sorts by views descending
-    let data: any;
-    try {
-      data = await fetchClips(channel, "all", cursor);
-    } catch {
-      break;
-    }
-    if (!data || !data.clips || data.clips.length === 0) break;
-
-    result.push(...data.clips);
-    cursor = data.pagination?.cursor || "";
-    onProgress?.(result.length);
-
-    if (!cursor || result.length >= maxClips) break;
-    await new Promise((r) => setTimeout(r, 50));
-  }
-
-  return result;
+  return fetchWindow(
+    channel,
+    "all",
+    { startedAt: "", endedAt: "" },
+    onProgress,
+    50,
+  );
 }
 
 // Concurrency helper
