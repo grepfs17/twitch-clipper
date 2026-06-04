@@ -1,22 +1,36 @@
 import type { APIRoute } from "astro";
 import { getAccessToken, getGames } from "../../../lib/twitch";
 
+const CLIP_SLUG_REGEX = /(?:clips\.twitch\.tv\/|clip\/)([\w-]+)/i;
+
+function extractClipSlug(clipUrl: string): string | null {
+  return clipUrl.match(CLIP_SLUG_REGEX)?.[1] ?? null;
+}
+
+function json(body: unknown, status: number) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+async function hydrateGameName(clip: any, token: string) {
+  if (!clip.game_id) {
+    clip.game_name = "No Category";
+    return;
+  }
+  const games = await getGames([clip.game_id], token);
+  const name = games[0]?.name;
+  clip.game_name = name || "Loading...";
+}
+
 export const GET: APIRoute = async ({ request }) => {
-  const url = new URL(request.url);
-  const clipUrl = url.searchParams.get("url");
+  const clipUrl = new URL(request.url).searchParams.get("url");
 
-  if (!clipUrl) {
-    return new Response(JSON.stringify({ error: "Clip URL is required" }), {
-      status: 400,
-    });
-  }
+  if (!clipUrl) return json({ error: "Clip URL is required" }, 400);
 
-  const slug = clipUrl.match(/(?:clips\.twitch\.tv\/|clip\/)([\w-]+)/i)?.[1];
-  if (!slug) {
-    return new Response(JSON.stringify({ error: "Invalid clip URL" }), {
-      status: 400,
-    });
-  }
+  const slug = clipUrl ? extractClipSlug(clipUrl) : null;
+  if (!slug) return json({ error: "Invalid clip URL" }, 400);
 
   try {
     const token = await getAccessToken();
@@ -32,35 +46,17 @@ export const GET: APIRoute = async ({ request }) => {
       },
     );
 
-    if (!response.ok) {
-      return new Response(JSON.stringify({ error: "Clip not found" }), {
-        status: 404,
-      });
-    }
+    if (!response.ok) return json({ error: "Clip not found" }, 404);
 
     const data = await response.json();
-    if (data.data.length === 0) {
-      return new Response(JSON.stringify({ error: "Clip not found" }), {
-        status: 404,
-      });
-    }
+    if (data.data.length === 0) return json({ error: "Clip not found" }, 404);
 
     const clip = data.data[0];
-    const gameIds = clip.game_id ? [clip.game_id] : [];
-    const games = await getGames(gameIds, token);
-    const gameMap = Object.fromEntries(games.map((g: any) => [g.id, g.name]));
+    await hydrateGameName(clip, token);
 
-    clip.game_name =
-      gameMap[clip.game_id] || (clip.game_id ? "Loading..." : "No Category");
-
-    return new Response(JSON.stringify({ clip }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    return json({ clip }, 200);
   } catch (error: any) {
     console.error("Error in clip lookup API:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-    });
+    return json({ error: error.message }, 500);
   }
 };

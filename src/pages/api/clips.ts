@@ -8,50 +8,57 @@ import {
 
 const gameNameCache = new Map<string, string>();
 
-export const GET: APIRoute = async ({ request }) => {
-  const url = new URL(request.url);
-  const channel = url.searchParams.get("channel");
-  const timeRange = url.searchParams.get("timeRange") || "all";
-  const after = url.searchParams.get("after") || undefined;
-  const startedAtParam = url.searchParams.get("startedAt");
-  const endedAtParam = url.searchParams.get("endedAt");
+const RANGE_HOURS: Record<string, number> = {
+  "24h": 24,
+  "7d": 7 * 24,
+  "30d": 30 * 24,
+};
 
-  if (!channel) {
-    return new Response(JSON.stringify({ error: "Channel name is required" }), {
-      status: 400,
-    });
-  }
+function resolveStartedAt(
+  startedAtParam: string | null,
+  timeRange: string,
+): string | undefined {
+  if (startedAtParam) return startedAtParam;
+  const hours = RANGE_HOURS[timeRange];
+  return hours
+    ? new Date(Date.now() - hours * 60 * 60 * 1000).toISOString()
+    : undefined;
+}
+
+async function hydrateGameNameCache(gameIds: string[], token: string) {
+  const uncached = gameIds.filter((id) => !gameNameCache.has(id));
+  if (uncached.length === 0) return;
+  const games = await getGames(uncached, token);
+  for (const g of games) gameNameCache.set(g.id, g.name);
+}
+
+function attachGameNames(clips: any[]): any[] {
+  return clips.map((clip) => ({
+    ...clip,
+    game_name:
+      gameNameCache.get(clip.game_id) ||
+      (clip.game_id ? "Loading..." : "No Category"),
+  }));
+}
+
+export const GET: APIRoute = async ({ request }) => {
+  const params = new URL(request.url).searchParams;
+  const channel = params.get("channel");
+  const timeRange = params.get("timeRange") || "all";
+  const after = params.get("after") || undefined;
+  const startedAtParam = params.get("startedAt");
+  const endedAt = params.get("endedAt") || undefined;
+
+  if (!channel) return json({ error: "Channel name is required" }, 400);
 
   try {
     const token = await getAccessToken();
     const broadcasterId = await getBroadcasterId(channel, token);
-
-    if (!broadcasterId) {
-      return new Response(JSON.stringify({ error: "Channel not found" }), {
-        status: 404,
-      });
-    }
-
-    let startedAt: string | undefined;
-    const now = new Date();
-
-    if (startedAtParam) {
-      startedAt = startedAtParam;
-    } else if (timeRange === "24h") {
-      startedAt = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
-    } else if (timeRange === "7d") {
-      startedAt = new Date(
-        now.getTime() - 7 * 24 * 60 * 60 * 1000,
-      ).toISOString();
-    } else if (timeRange === "30d") {
-      startedAt = new Date(
-        now.getTime() - 30 * 24 * 60 * 60 * 1000,
-      ).toISOString();
-    }
+    if (!broadcasterId) return json({ error: "Channel not found" }, 404);
 
     const clipsData = await getClips(broadcasterId, token, {
-      started_at: startedAt,
-      ended_at: endedAtParam || undefined,
+      started_at: resolveStartedAt(startedAtParam, timeRange),
+      ended_at: endedAt,
       first: 100,
       after,
     });
@@ -59,35 +66,26 @@ export const GET: APIRoute = async ({ request }) => {
     const gameIds = [
       ...new Set(clipsData.data.map((clip: any) => clip.game_id)),
     ].filter((id) => id !== "") as string[];
-    const uncachedIds = gameIds.filter((id) => !gameNameCache.has(id));
-    if (uncachedIds.length > 0) {
-      const games = await getGames(uncachedIds, token);
-      for (const g of games) {
-        gameNameCache.set(g.id, g.name);
-      }
-    }
 
-    const clips = clipsData.data.map((clip: any) => ({
-      ...clip,
-      game_name:
-        gameNameCache.get(clip.game_id) || (clip.game_id ? "Loading..." : "No Category"),
-    }));
+    await hydrateGameNameCache(gameIds, token);
 
-    return new Response(
-      JSON.stringify({
-        clips,
+    return json(
+      {
+        clips: attachGameNames(clipsData.data),
         pagination: clipsData.pagination,
         broadcasterId,
-      }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
       },
+      200,
     );
   } catch (error: any) {
     console.error("Error in clips API:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-    });
+    return json({ error: error.message }, 500);
   }
 };
+
+function json(body: unknown, status: number) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}

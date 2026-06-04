@@ -26,6 +26,13 @@ const QUALITY_TO_FORMAT: Record<string, string> = {
   "portrait-360p": "portrait-360",
 };
 
+const VIDEO_FILE_RE = /\.(mp4|webm|mkv)$/i;
+const VIDEO_FILE_RE_FALLBACK = /\.(mp4|mp4_|webm|mkv)/i;
+const ERROR_LINE_RE = /ERROR:\s*(.+)/i;
+const DOWNLOAD_TIMEOUT_MS = 120_000;
+const CLEANUP_DELAY_MS = 5_000;
+const LOG_TAIL = 2000;
+
 function extractSlugFromUrl(clipUrl: string): string | null {
   const match = clipUrl.match(CLIP_SLUG_REGEX);
   return match ? match[1] : null;
@@ -40,7 +47,7 @@ function makeFilename(name: string): string {
 }
 
 function findVideoFiles(files: string[]): string | null {
-  return files.find((f) => /\.(mp4|webm|mkv)$/i.test(f)) || null;
+  return files.find((f) => VIDEO_FILE_RE.test(f)) || null;
 }
 
 async function cleanupDir(dir: string) {
@@ -53,31 +60,84 @@ async function cleanupDir(dir: string) {
   }
 }
 
-export const GET: APIRoute = async ({ request }) => {
-  const url = new URL(request.url);
-  const clipUrl = url.searchParams.get("url");
-  const clipTitle = url.searchParams.get("title") || "";
-  const quality =
-    QUALITY_TO_FORMAT[url.searchParams.get("quality") || "best"] || "best";
+function jsonError(message: string, status: number) {
+  return new Response(JSON.stringify({ error: message }), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
 
-  if (!clipUrl) {
-    return new Response(JSON.stringify({ error: "Clip URL is required" }), {
-      status: 400,
-    });
+function parseDownloadError(stderr: string, stdout: string, code: number | null): string {
+  const errMsg =
+    stderr.match(ERROR_LINE_RE)?.[1] ||
+    stdout.match(ERROR_LINE_RE)?.[1] ||
+    "Download failed";
+  console.error("[download] twitch-dlp exited with code", code);
+  console.error("[download] stderr:", stderr.slice(0, 1000));
+  return errMsg;
+}
+
+async function readDownloadedClip(
+  tempDir: string,
+  slug: string,
+  clipTitle: string,
+): Promise<{ filePath: string; safeName: string } | null> {
+  const files = await readdir(tempDir);
+  const videoFile =
+    findVideoFiles(files) || files.find((f) => VIDEO_FILE_RE_FALLBACK.test(f)) || null;
+  if (!videoFile) {
+    const allFiles = await readdir(tempDir).catch(() => []);
+    console.error(
+      "[download] No video files found in",
+      tempDir,
+      "files:",
+      allFiles,
+    );
+    return null;
   }
+
+  const filePath = join(tempDir, videoFile);
+  const fileStat = await stat(filePath);
+  const safeName = clipTitle ? makeFilename(clipTitle) : `${slug}.mp4`;
+  console.log("[download] Success:", videoFile, fileStat.size, "bytes");
+  return { filePath, safeName };
+}
+
+function buildClipStreamResponse(
+  filePath: string,
+  safeName: string,
+  size: number,
+  tempDir: string,
+): Response {
+  const stream = createReadStream(filePath);
+  setTimeout(() => cleanupDir(tempDir).catch(() => {}), CLEANUP_DELAY_MS);
+  return new Response(stream as any, {
+    status: 200,
+    headers: {
+      "Content-Type": "video/mp4",
+      "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(safeName)}`,
+      "Content-Length": size.toString(),
+    },
+  });
+}
+
+export const GET: APIRoute = async ({ request }) => {
+  const params = new URL(request.url).searchParams;
+  const clipUrl = params.get("url");
+  const clipTitle = params.get("title") || "";
+  const quality =
+    QUALITY_TO_FORMAT[params.get("quality") || "best"] || "best";
+
+  if (!clipUrl) return jsonError("Clip URL is required", 400);
 
   const slug = extractSlugFromUrl(clipUrl);
-  if (!slug) {
-    return new Response(JSON.stringify({ error: "Invalid clip URL" }), {
-      status: 400,
-    });
-  }
+  if (!slug) return jsonError("Invalid clip URL", 400);
 
   const tempDir = join(tmpdir(), `twitch-clip-${randomUUID()}`);
   await mkdir(tempDir, { recursive: true });
 
   return new Promise((resolve) => {
-    const process = spawn(
+    const child = spawn(
       "npx",
       [
         "twitch-dlp",
@@ -99,116 +159,60 @@ export const GET: APIRoute = async ({ request }) => {
     let stderr = "";
     let stdout = "";
 
-    process.stderr.on("data", (chunk: Buffer) => {
+    child.stderr.on("data", (chunk: Buffer) => {
       stderr += chunk.toString();
     });
-
-    process.stdout.on("data", (chunk: Buffer) => {
+    child.stdout.on("data", (chunk: Buffer) => {
       stdout += chunk.toString();
     });
 
     const timeout = setTimeout(() => {
-      process.kill();
+      child.kill();
       cleanupDir(tempDir).catch(() => {});
-      resolve(
-        new Response(
-          JSON.stringify({ error: "Download timed out after 120 seconds" }),
-          { status: 504 },
-        ),
-      );
-    }, 120_000);
+      resolve(jsonError("Download timed out after 120 seconds", 504));
+    }, DOWNLOAD_TIMEOUT_MS);
 
-    process.on("error", (err) => {
+    child.on("error", (err) => {
       clearTimeout(timeout);
       console.error("[download] Process error:", err.message);
       resolve(
-        new Response(
-          JSON.stringify({
-            error: `Failed to start twitch-dlp: ${err.message}`,
-          }),
-          { status: 500 },
-        ),
+        jsonError(`Failed to start twitch-dlp: ${err.message}`, 500),
       );
     });
 
-    process.on("close", async (code) => {
+    child.on("close", async (code) => {
       clearTimeout(timeout);
-
       if (code !== 0) {
-        const errMsg =
-          stderr.match(/ERROR:\s*(.+)/i)?.[1] ||
-          stdout.match(/ERROR:\s*(.+)/i)?.[1] ||
-          "Download failed";
-        console.error("[download] twitch-dlp exited with code", code);
-        console.error("[download] stderr:", stderr.slice(0, 1000));
-        resolve(
-          new Response(JSON.stringify({ error: errMsg }), { status: 500 }),
-        );
+        resolve(jsonError(parseDownloadError(stderr, stdout, code), 500));
         return;
       }
-
       try {
-        const files = await readdir(tempDir);
-        const videoFile =
-          findVideoFiles(files) ||
-          files.find((f) => /\.(mp4|mp4_|webm|mkv)/i.test(f));
-
-        if (!videoFile) {
-          const allFiles = await readdir(tempDir).catch(() => []);
-          console.error(
-            "[download] No video files found in",
-            tempDir,
-            "files:",
-            allFiles,
-          );
+        const result = await readDownloadedClip(tempDir, slug, clipTitle);
+        if (!result) {
           console.error(
             "[download] twitch-dlp output - stdout:",
-            stdout.slice(0, 2000),
+            stdout.slice(0, LOG_TAIL),
           );
           console.error(
             "[download] twitch-dlp output - stderr:",
-            stderr.slice(0, 2000),
+            stderr.slice(0, LOG_TAIL),
           );
-          resolve(
-            new Response(
-              JSON.stringify({ error: "No video file found after download" }),
-              { status: 500 },
-            ),
-          );
+          resolve(jsonError("No video file found after download", 500));
           return;
         }
-
-        const filePath = join(tempDir, videoFile);
-        const fileStat = await stat(filePath);
-        const safeName = clipTitle
-          ? makeFilename(clipTitle)
-          : `${slug}.mp4`;
-
-        console.log("[download] Success:", videoFile, fileStat.size, "bytes");
-
-        const stream = createReadStream(filePath);
-
+        const size = (await stat(result.filePath)).size;
         resolve(
-          new Response(stream as any, {
-            status: 200,
-            headers: {
-              "Content-Type": "video/mp4",
-              "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(safeName)}`,
-              "Content-Length": fileStat.size.toString(),
-            },
-          }),
+          buildClipStreamResponse(
+            result.filePath,
+            result.safeName,
+            size,
+            tempDir,
+          ),
         );
-
-        setTimeout(() => cleanupDir(tempDir).catch(() => {}), 5000);
       } catch (err: any) {
         console.error("[download] Error reading file:", err);
         resolve(
-          new Response(
-            JSON.stringify({
-              error: err.message || "Failed to read downloaded file",
-            }),
-            { status: 500 },
-          ),
+          jsonError(err.message || "Failed to read downloaded file", 500),
         );
       }
     });

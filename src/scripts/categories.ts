@@ -115,45 +115,61 @@ export function initCategories() {
     li.classList.add("active");
   });
 
-  elements.categoryInput?.addEventListener("keydown", (e: KeyboardEvent) => {
-    const list = elements.categoryList;
-    if (!list || !list.classList.contains("open")) return;
-    const items = [
-      ...list.querySelectorAll<HTMLLIElement>(
-        "li:not([style*='display: none'])",
-      ),
-    ];
-    const activeIndex = items.findIndex((el) =>
-      el.classList.contains("active"),
-    );
+  elements.categoryInput?.addEventListener("keydown", handleCategoryKeydown);
+}
 
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      const next = activeIndex + 1;
-      if (next < items.length) {
-        items.forEach((el) => el.classList.remove("active"));
-        items[next].classList.add("active");
-      }
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      const prev = activeIndex - 1;
-      if (prev >= 0) {
-        items.forEach((el) => el.classList.remove("active"));
-        items[prev].classList.add("active");
-      }
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      const active = items.find((el) => el.classList.contains("active"));
-      if (active) {
-        selectCategory(active.dataset.value || "all", active.textContent || "");
-      } else {
-        selectCategory("all", "");
-      }
-    } else if (e.key === "Escape") {
-      list.classList.remove("open");
-      focusJustOpened = false;
-    }
-  });
+interface CategoryKeyContext {
+  list: HTMLElement;
+  items: HTMLLIElement[];
+  activeIndex: number;
+}
+
+function getVisibleCategoryItems(list: HTMLElement): HTMLLIElement[] {
+  return [
+    ...list.querySelectorAll<HTMLLIElement>("li:not([style*='display: none'])"),
+  ];
+}
+
+function moveActive(items: HTMLLIElement[], nextIndex: number) {
+  if (nextIndex < 0 || nextIndex >= items.length) return;
+  items.forEach((el) => el.classList.remove("active"));
+  items[nextIndex].classList.add("active");
+}
+
+const CATEGORY_KEY_HANDLERS: Record<
+  string,
+  (e: KeyboardEvent, ctx: CategoryKeyContext) => void
+> = {
+  ArrowDown: (e, { items, activeIndex }) => {
+    e.preventDefault();
+    moveActive(items, activeIndex + 1);
+  },
+  ArrowUp: (e, { items, activeIndex }) => {
+    e.preventDefault();
+    moveActive(items, activeIndex - 1);
+  },
+  Enter: (e, { items }) => {
+    e.preventDefault();
+    const active = items.find((el) => el.classList.contains("active"));
+    selectCategory(
+      active?.dataset.value || "all",
+      active?.textContent || "",
+    );
+  },
+  Escape: (_e, { list }) => {
+    list.classList.remove("open");
+    focusJustOpened = false;
+  },
+};
+
+function handleCategoryKeydown(e: KeyboardEvent) {
+  const list = elements.categoryList;
+  if (!list || !list.classList.contains("open")) return;
+  const items = getVisibleCategoryItems(list);
+  const activeIndex = items.findIndex((el) =>
+    el.classList.contains("active"),
+  );
+  CATEGORY_KEY_HANDLERS[e.key]?.(e, { list, items, activeIndex });
 }
 
 export { updateCategories };

@@ -94,57 +94,61 @@ export function initFavorites() {
 
   const grid = document.getElementById("favoritesGrid");
   if (grid) {
-    grid.addEventListener("click", (e) => {
-      const target = e.target as HTMLElement;
-
-      const removeBtn = target.closest(".fav-remove") as HTMLButtonElement;
-      if (removeBtn) {
-        if (removeBtn.classList.contains("fav-remove-clip")) {
-          const clipUrl = removeBtn
-            .closest(".fav-clip")
-            ?.getAttribute("data-clip-url");
-          if (clipUrl) removeFavorite(clipUrl);
-        }
-        return;
-      }
-
-      const channelHeader = target.closest(
-        ".fav-channel-header",
-      ) as HTMLElement;
-      if (channelHeader) {
-        const channelNode = channelHeader.closest(
-          ".fav-channel",
-        ) as HTMLElement;
-        if (channelNode) channelNode.classList.toggle("collapsed");
-        return;
-      }
-
-      const gameHeader = target.closest(".fav-game-header") as HTMLElement;
-      if (gameHeader) {
-        const gameNode = gameHeader.closest(".fav-game") as HTMLElement;
-        if (gameNode) gameNode.classList.toggle("collapsed");
-        return;
-      }
-
-      const clipItem = target.closest(".fav-clip") as HTMLElement;
-      if (clipItem) {
-        const clipUrl = clipItem.getAttribute("data-clip-url");
-        if (!clipUrl) return;
-        fetch(`/api/clips/lookup?url=${encodeURIComponent(clipUrl)}`)
-          .then((r) => r.json())
-          .then((data) => {
-            if (data.clip) {
-              window.dispatchEvent(
-                new CustomEvent("fav:openClip", { detail: data.clip }),
-              );
-            }
-          })
-          .catch(() => {});
-      }
-    });
+    grid.addEventListener("click", handleFavoritesGridClick);
   }
   renderFavorites();
   updateButtonCount();
+}
+
+function toggleClosestCollapse(
+  target: HTMLElement,
+  headerSelector: string,
+  nodeSelector: string,
+): boolean {
+  const header = target.closest(headerSelector);
+  if (!header) return false;
+  const node = header.closest(nodeSelector);
+  if (node) (node as HTMLElement).classList.toggle("collapsed");
+  return true;
+}
+
+function handleFavRemoveClick(target: HTMLElement): boolean {
+  const removeBtn = target.closest(".fav-remove") as HTMLButtonElement | null;
+  if (!removeBtn) return false;
+  if (removeBtn.classList.contains("fav-remove-clip")) {
+    const clipUrl = removeBtn
+      .closest(".fav-clip")
+      ?.getAttribute("data-clip-url");
+    if (clipUrl) removeFavorite(clipUrl);
+  }
+  return true;
+}
+
+async function handleFavClipClick(target: HTMLElement): Promise<boolean> {
+  const clipItem = target.closest(".fav-clip") as HTMLElement | null;
+  if (!clipItem) return false;
+  const clipUrl = clipItem.getAttribute("data-clip-url");
+  if (!clipUrl) return true;
+  try {
+    const r = await fetch(`/api/clips/lookup?url=${encodeURIComponent(clipUrl)}`);
+    const data = await r.json();
+    if (data.clip) {
+      window.dispatchEvent(
+        new CustomEvent("fav:openClip", { detail: data.clip }),
+      );
+    }
+  } catch {
+    /* ignore */
+  }
+  return true;
+}
+
+async function handleFavoritesGridClick(e: MouseEvent) {
+  const target = e.target as HTMLElement;
+  if (handleFavRemoveClick(target)) return;
+  if (toggleClosestCollapse(target, ".fav-channel-header", ".fav-channel")) return;
+  if (toggleClosestCollapse(target, ".fav-game-header", ".fav-game")) return;
+  await handleFavClipClick(target);
 }
 
 function escapeHtml(str: string): string {
