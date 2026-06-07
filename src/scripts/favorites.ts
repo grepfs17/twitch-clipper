@@ -10,6 +10,12 @@ export interface FavoriteClip {
   thumbnailUrl?: string;
 }
 
+export function resetFavoritesCache() {
+  _cacheLoaded = false;
+  _cachedFavorites = [];
+  _favUrls.clear();
+}
+
 let _cachedFavorites: FavoriteClip[] = [];
 const _favUrls = new Set<string>();
 let _cacheLoaded = false;
@@ -78,7 +84,7 @@ function closeFavoritesModal() {
   document.body.style.overflow = "";
 }
 
-function updateButtonCount() {
+export function updateButtonCount() {
   const count = loadFavorites().length;
   if (elements.favoritesCount) {
     elements.favoritesCount.textContent = count.toString();
@@ -151,7 +157,7 @@ async function handleFavoritesGridClick(e: MouseEvent) {
   await handleFavClipClick(target);
 }
 
-function escapeHtml(str: string): string {
+export function escapeHtml(str: string): string {
   return str
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")

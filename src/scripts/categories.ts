@@ -34,7 +34,7 @@ function updateCategories() {
   }
 }
 
-function filterCategoryList(query: string) {
+export function filterCategoryList(query: string) {
   if (!elements.categoryList) return;
   const items = elements.categoryList.querySelectorAll("li");
   const lower = query.toLowerCase();
@@ -44,7 +44,7 @@ function filterCategoryList(query: string) {
   });
 }
 
-function selectCategory(value: string, label: string) {
+export function selectCategory(value: string, label: string) {
   if (elements.categoryFilter) elements.categoryFilter.value = value;
   if (elements.categoryInput)
     elements.categoryInput.value = label === "All Categories" ? "" : label;
