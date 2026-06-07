@@ -151,10 +151,7 @@ const CATEGORY_KEY_HANDLERS: Record<
   Enter: (e, { items }) => {
     e.preventDefault();
     const active = items.find((el) => el.classList.contains("active"));
-    selectCategory(
-      active?.dataset.value || "all",
-      active?.textContent || "",
-    );
+    selectCategory(active?.dataset.value || "all", active?.textContent || "");
   },
   Escape: (_e, { list }) => {
     list.classList.remove("open");
@@ -166,9 +163,7 @@ function handleCategoryKeydown(e: KeyboardEvent) {
   const list = elements.categoryList;
   if (!list || !list.classList.contains("open")) return;
   const items = getVisibleCategoryItems(list);
-  const activeIndex = items.findIndex((el) =>
-    el.classList.contains("active"),
-  );
+  const activeIndex = items.findIndex((el) => el.classList.contains("active"));
   CATEGORY_KEY_HANDLERS[e.key]?.(e, { list, items, activeIndex });
 }
 
