@@ -264,8 +264,24 @@ import "../styles/index.css";
                 aria-label="Close">&times;</button
             >
             <div class="modal-video-wrapper">
-                <iframe id="modalIframe" src="" style="border:0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen
-                ></iframe>
+                <div id="modalSpinner" class="modal-spinner">
+                    <svg
+                        viewBox="0 0 24 24"
+                        width="32"
+                        height="32"
+                        fill="currentColor"
+                        style="animation: spin 1s linear infinite"
+                        ><path
+                            d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"
+                        ></path></svg
+                    >
+                </div>
+                <iframe
+                    id="modalIframe"
+                    src=""
+                    style="border:0"
+                    allow="autoplay; encrypted-media; fullscreen"
+                    allowfullscreen></iframe>
             </div>
             <div class="modal-body">
                 <div class="modal-title-row">
@@ -389,7 +405,11 @@ import "../styles/index.css";
                     </div>
                 </div>
                 <div class="modal-notes" id="modalNotesSection">
-                    <button type="button" class="modal-notes-toggle" id="modalNotesToggle">
+                    <button
+                        type="button"
+                        class="modal-notes-toggle"
+                        id="modalNotesToggle"
+                    >
                         <span class="modal-notes-chevron">&#9654;</span>
                         <span>&gt; notes</span>
                     </button>
@@ -399,8 +419,7 @@ import "../styles/index.css";
                             class="modal-notes-input"
                             placeholder="Add notes about this clip..."
                             rows="3"
-                            spellcheck="false"
-                        ></textarea>
+                            spellcheck="false"></textarea>
                     </div>
                 </div>
             </div>

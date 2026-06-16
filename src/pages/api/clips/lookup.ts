@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { TWITCH_CLIENT_ID } from "astro:env/server";
 import { getAccessToken, getGames } from "../../../lib/twitch";
 
 const CLIP_SLUG_REGEX = /(?:clips\.twitch\.tv\/|clip\/)([\w-]+)/i;
@@ -34,7 +35,7 @@ export const GET: APIRoute = async ({ request }) => {
 
   try {
     const token = await getAccessToken();
-    const clientId = process.env.TWITCH_CLIENT_ID!;
+    const clientId = TWITCH_CLIENT_ID!;
 
     const response = await fetch(
       `https://api.twitch.tv/helix/clips?id=${slug}`,

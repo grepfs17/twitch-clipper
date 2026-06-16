@@ -1,20 +1,18 @@
+import { TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET } from "astro:env/server";
+
 // Token cache
 let _cachedToken: string | null = null;
 let _tokenExpiresAt = 0; // unix ms
 
 function getTwitchClientId(): string {
-  const clientId = process.env.TWITCH_CLIENT_ID;
-  if (!clientId) {
+  if (!TWITCH_CLIENT_ID) {
     throw new Error("TWITCH_CLIENT_ID not set in environment variables");
   }
-  return clientId;
+  return TWITCH_CLIENT_ID;
 }
 
 export async function getAccessToken() {
-  const clientId = process.env.TWITCH_CLIENT_ID;
-  const clientSecret = process.env.TWITCH_CLIENT_SECRET;
-
-  if (!clientId || !clientSecret) {
+  if (!TWITCH_CLIENT_ID || !TWITCH_CLIENT_SECRET) {
     throw new Error("Twitch credentials not found in environment variables");
   }
 
@@ -29,8 +27,8 @@ export async function getAccessToken() {
       "Content-Type": "application/x-www-form-urlencoded",
     },
     body: new URLSearchParams({
-      client_id: clientId,
-      client_secret: clientSecret,
+      client_id: TWITCH_CLIENT_ID,
+      client_secret: TWITCH_CLIENT_SECRET,
       grant_type: "client_credentials",
     }),
   });

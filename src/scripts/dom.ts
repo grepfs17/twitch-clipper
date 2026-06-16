@@ -29,6 +29,7 @@ export const elements = {
   modalGame: document.getElementById("modalGame"),
   modalDate: document.getElementById("modalDate"),
   modalIframe: document.getElementById("modalIframe") as HTMLIFrameElement,
+  modalSpinner: document.getElementById("modalSpinner"),
   modalCloseBtn: document.getElementById("modalCloseBtn"),
   modalCopyBtn: document.getElementById("modalCopyBtn") as HTMLButtonElement,
   modalOpenBtn: document.getElementById("modalOpenBtn") as HTMLAnchorElement,

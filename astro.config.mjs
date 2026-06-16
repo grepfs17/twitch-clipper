@@ -1,6 +1,5 @@
 // @ts-check
-import { defineConfig } from "astro/config";
-
+import { defineConfig, envField } from "astro/config";
 import node from "@astrojs/node";
 
 // https://astro.build/config
@@ -10,4 +9,16 @@ export default defineConfig({
   adapter: node({
     mode: "standalone",
   }),
+  env: {
+    schema: {
+      TWITCH_CLIENT_ID: envField.string({
+        context: "server",
+        access: "secret",
+      }),
+      TWITCH_CLIENT_SECRET: envField.string({
+        context: "server",
+        access: "secret",
+      }),
+    },
+  },
 });

@@ -130,7 +130,8 @@ function formatClipDate(iso: string): string {
 
 function populateModalContent(clip: any, date: string) {
   elements.modalTitle!.textContent = clip.title;
-  if (elements.modalCreator) elements.modalCreator.textContent = clip.creator_name;
+  if (elements.modalCreator)
+    elements.modalCreator.textContent = clip.creator_name;
   elements.modalGame!.textContent = clip.game_name;
   elements.modalDate!.textContent = date;
 }
@@ -152,8 +153,20 @@ function showModalAndIframe(clip: any) {
     elements.favoritesModal.style.zIndex = "999";
   }
   document.body.style.overflow = "hidden";
+
+  if (elements.modalSpinner) elements.modalSpinner.style.display = "flex";
+  if (elements.modalIframe) elements.modalIframe.style.opacity = "0";
+
+  const hideSpinner = () => {
+    if (elements.modalSpinner) elements.modalSpinner.style.display = "none";
+    if (elements.modalIframe) elements.modalIframe.style.opacity = "1";
+  };
+
+  elements.modalIframe!.onload = hideSpinner;
+
   onEmbedReady(() => {
     sendEmbedCommand("setQuality", ["chunked"]);
+    hideSpinner();
   });
   elements.modalIframe!.src = getClipEmbedUrl(clip.url);
 }
@@ -164,7 +177,9 @@ async function fetchAndPopulateFormats(clipUrl: string) {
   resetQualitySelector();
 
   try {
-    const res = await fetch(`/api/clips/formats?url=${encodeURIComponent(clipUrl)}`);
+    const res = await fetch(
+      `/api/clips/formats?url=${encodeURIComponent(clipUrl)}`,
+    );
     if (!res.ok) return;
     const data = await res.json();
     if (data.options?.length) {
@@ -215,6 +230,8 @@ function closeClipModal() {
   elements.modal.classList.add("hidden");
   elements.modalIframe.src = "";
   elements.modalIframe.onload = null;
+  if (elements.modalSpinner) elements.modalSpinner.style.display = "none";
+  if (elements.modalIframe) elements.modalIframe.style.opacity = "1";
   if (
     elements.favoritesModal &&
     !elements.favoritesModal.classList.contains("hidden")
@@ -242,11 +259,18 @@ async function downloadClip(quality: string) {
   showProgressBar(progressEl, progressFill, progressText);
 
   try {
-    const response = await fetch(buildDownloadUrl(currentClipUrl, quality, currentClipMeta?.title));
+    const response = await fetch(
+      buildDownloadUrl(currentClipUrl, quality, currentClipMeta?.title),
+    );
     if (!response.ok) throw new Error(await extractErrorMessage(response));
 
     const total = parseInt(response.headers.get("content-length") || "0") || 0;
-    const blob = await readResponseAsBlob(response, total, progressFill, progressText);
+    const blob = await readResponseAsBlob(
+      response,
+      total,
+      progressFill,
+      progressText,
+    );
     saveBlob(blob, response);
 
     progressFill.style.width = "100%";
@@ -288,7 +312,12 @@ async function readResponseAsBlob(
   progressText: HTMLElement,
 ): Promise<Blob> {
   if (total > 0 && response.body) {
-    const chunks = await streamWithProgress(response.body.getReader(), total, progressFill, progressText);
+    const chunks = await streamWithProgress(
+      response.body.getReader(),
+      total,
+      progressFill,
+      progressText,
+    );
     return new Blob(chunks as BlobPart[]);
   }
   return await response.blob();

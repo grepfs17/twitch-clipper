@@ -1354,6 +1354,17 @@ input[type="text"]#channelInput::placeholder {
     inset: 0;
     width: 100%;
     height: 100%;
+    transition: opacity 0.2s ease;
+}
+
+.modal-spinner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+    color: var(--amber-dim);
 }
 
 .modal-body {
