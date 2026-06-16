@@ -6,19 +6,11 @@ let currentClipUrl = "";
 let currentClipMeta: FavoriteClip | null = null;
 let isDownloading = false;
 
-const qualityLabels: Record<string, string> = {
-  best: "Best Quality",
-  "1080p": "1080p",
-  "720p": "720p",
-  "480p": "480p",
-  "360p": "360p",
-  "160p": "160p",
-  "portrait-1080p": "1080p Portrait",
-  "portrait-720p": "720p Portrait",
-  "portrait-480p": "480p Portrait",
-  "portrait-360p": "360p Portrait",
-  "portrait-160p": "160p Portrait",
-};
+interface FormatOption {
+  id: string;
+  label: string;
+  group: "landscape" | "portrait";
+}
 
 function getClipEmbedUrl(clipUrl: string): string {
   const slug = clipUrl.split("/").pop() || "";
@@ -81,19 +73,6 @@ function initQualitySelector() {
       elements.qualitySelectTrigger.classList.add("open");
     }
   });
-
-  elements.qualitySelectOptions.querySelectorAll("li").forEach((li) => {
-    li.addEventListener("click", () => {
-      const value = li.getAttribute("data-value");
-      if (!value) return;
-
-      elements.qualitySelect.value = value;
-      elements.qualitySelectTrigger.textContent = qualityLabels[value] || value;
-
-      elements.qualitySelectOptions.classList.remove("open");
-      elements.qualitySelectTrigger.classList.remove("open");
-    });
-  });
 }
 
 function closeAllSelects() {
@@ -118,6 +97,7 @@ export function openClipModal(clip: any) {
   populateModalContent(clip, date);
   setModalNotesSection(clip.url);
   showModalAndIframe(clip);
+  fetchAndPopulateFormats(clip.url);
 }
 
 function modalElementsReady(): boolean {
@@ -176,6 +156,58 @@ function showModalAndIframe(clip: any) {
     sendEmbedCommand("setQuality", ["chunked"]);
   });
   elements.modalIframe!.src = getClipEmbedUrl(clip.url);
+}
+
+async function fetchAndPopulateFormats(clipUrl: string) {
+  if (!elements.qualitySelectOptions) return;
+
+  resetQualitySelector();
+
+  try {
+    const res = await fetch(`/api/clips/formats?url=${encodeURIComponent(clipUrl)}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.options?.length) {
+      populateQualityOptions(data.options);
+    }
+  } catch {
+    // Keep the default "Best Quality" option on failure
+  }
+}
+
+function resetQualitySelector() {
+  if (!elements.qualitySelect || !elements.qualitySelectTrigger) return;
+  elements.qualitySelect.value = "best";
+  elements.qualitySelectTrigger.textContent = "Best Quality";
+}
+
+function populateQualityOptions(options: FormatOption[]) {
+  if (!elements.qualitySelectOptions) return;
+
+  elements.qualitySelectOptions.innerHTML = "";
+
+  let hasPortrait = false;
+
+  for (const opt of options) {
+    if (opt.group === "portrait" && !hasPortrait) {
+      hasPortrait = true;
+      const header = document.createElement("li");
+      header.className = "optgroup-header";
+      header.textContent = "Portrait Mode";
+      elements.qualitySelectOptions.appendChild(header);
+    }
+
+    const li = document.createElement("li");
+    li.setAttribute("data-value", opt.id);
+    li.textContent = opt.label;
+    li.addEventListener("click", () => {
+      if (!elements.qualitySelect || !elements.qualitySelectTrigger) return;
+      elements.qualitySelect.value = opt.id;
+      elements.qualitySelectTrigger.textContent = opt.label;
+      closeAllSelects();
+    });
+    elements.qualitySelectOptions.appendChild(li);
+  }
 }
 
 function closeClipModal() {
