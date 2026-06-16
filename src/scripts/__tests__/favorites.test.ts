@@ -21,8 +21,12 @@ describe("favorites", () => {
     mockStorage = {};
     vi.stubGlobal("localStorage", {
       getItem: (key: string) => mockStorage[key] ?? null,
-      setItem: (key: string, value: string) => { mockStorage[key] = value; },
-      removeItem: (key: string) => { delete mockStorage[key]; },
+      setItem: (key: string, value: string) => {
+        mockStorage[key] = value;
+      },
+      removeItem: (key: string) => {
+        delete mockStorage[key];
+      },
     });
     elements.favoritesCount = { textContent: "" } as any;
   });
@@ -65,7 +69,8 @@ describe("favorites", () => {
 
   describe("toggleFavorite", () => {
     it("adds clip when not in favorites", async () => {
-      const { toggleFavorite, isFavorite, resetFavoritesCache } = await import("../favorites");
+      const { toggleFavorite, isFavorite, resetFavoritesCache } =
+        await import("../favorites");
       resetFavoritesCache();
       const clip: FavoriteClip = {
         url: "https://twitch.tv/clip/NewClip",
@@ -81,7 +86,8 @@ describe("favorites", () => {
     });
 
     it("removes clip when already in favorites", async () => {
-      const { toggleFavorite, isFavorite, resetFavoritesCache } = await import("../favorites");
+      const { toggleFavorite, isFavorite, resetFavoritesCache } =
+        await import("../favorites");
       resetFavoritesCache();
       const clip: FavoriteClip = {
         url: "https://twitch.tv/clip/ExistingClip",
@@ -97,7 +103,8 @@ describe("favorites", () => {
     });
 
     it("does not duplicate existing clip", async () => {
-      const { toggleFavorite, resetFavoritesCache } = await import("../favorites");
+      const { toggleFavorite, resetFavoritesCache } =
+        await import("../favorites");
       resetFavoritesCache();
       const clip: FavoriteClip = {
         url: "https://twitch.tv/clip/DupClip",
@@ -111,13 +118,16 @@ describe("favorites", () => {
       toggleFavorite(clip);
 
       const stored = JSON.parse(mockStorage["tc-favorites"]);
-      expect(stored.filter((f: FavoriteClip) => f.url === clip.url).length).toBe(1);
+      expect(
+        stored.filter((f: FavoriteClip) => f.url === clip.url).length,
+      ).toBe(1);
     });
   });
 
   describe("updateButtonCount", () => {
     it("updates favoritesCount text content", async () => {
-      const { updateButtonCount, resetFavoritesCache } = await import("../favorites");
+      const { updateButtonCount, resetFavoritesCache } =
+        await import("../favorites");
       resetFavoritesCache();
       const clip: FavoriteClip = {
         url: "https://twitch.tv/clip/CountClip",
@@ -133,7 +143,8 @@ describe("favorites", () => {
     });
 
     it("shows 0 when no favorites", async () => {
-      const { updateButtonCount, resetFavoritesCache } = await import("../favorites");
+      const { updateButtonCount, resetFavoritesCache } =
+        await import("../favorites");
       resetFavoritesCache();
       updateButtonCount();
 

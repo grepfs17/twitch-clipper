@@ -7,7 +7,9 @@ vi.mock("../dom", () => ({
     categoryFilter: { value: "all" },
     categoryList: null,
     categoryInput: { value: "" },
-    categoryClear: { classList: { remove: vi.fn(), add: vi.fn(), toggle: vi.fn() } },
+    categoryClear: {
+      classList: { remove: vi.fn(), add: vi.fn(), toggle: vi.fn() },
+    },
   },
 }));
 
@@ -25,10 +27,16 @@ describe("categories", () => {
 
   it("updateCategories creates list items for each unique sorted game_name", async () => {
     const appendChild = vi.fn();
-    elements.categoryList = { innerHTML: "", appendChild, querySelectorAll: vi.fn().mockReturnValue([]) } as any;
+    elements.categoryList = {
+      innerHTML: "",
+      appendChild,
+      querySelectorAll: vi.fn().mockReturnValue([]),
+    } as any;
     elements.categoryInput = { value: "" } as any;
     elements.categoryFilter = { value: "all" } as any;
-    elements.categoryClear = { classList: { remove: vi.fn(), add: vi.fn() } } as any;
+    elements.categoryClear = {
+      classList: { remove: vi.fn(), add: vi.fn() },
+    } as any;
 
     vi.mocked(clips.allClips).push(
       { game_name: "Valorant" },
@@ -47,10 +55,16 @@ describe("categories", () => {
 
   it("updateCategories restores previous selection when valid", async () => {
     const appendChild = vi.fn();
-    elements.categoryList = { innerHTML: "", appendChild, querySelectorAll: vi.fn().mockReturnValue([]) } as any;
+    elements.categoryList = {
+      innerHTML: "",
+      appendChild,
+      querySelectorAll: vi.fn().mockReturnValue([]),
+    } as any;
     elements.categoryInput = { value: "" } as any;
     elements.categoryFilter = { value: "all" } as any;
-    elements.categoryClear = { classList: { remove: vi.fn(), add: vi.fn() } } as any;
+    elements.categoryClear = {
+      classList: { remove: vi.fn(), add: vi.fn() },
+    } as any;
 
     vi.mocked(clips.allClips).push({ game_name: "Minecraft" });
     elements.categoryFilter!.value = "Minecraft";
@@ -60,7 +74,9 @@ describe("categories", () => {
 
     expect(elements.categoryFilter!.value).toBe("Minecraft");
     expect(elements.categoryInput!.value).toBe("Minecraft");
-    expect(elements.categoryClear!.classList.remove).toHaveBeenCalledWith("hidden");
+    expect(elements.categoryClear!.classList.remove).toHaveBeenCalledWith(
+      "hidden",
+    );
   });
 
   it("selectCategory sets filter value and calls applyFilters", async () => {
@@ -88,13 +104,26 @@ describe("categories", () => {
 
     expect(elements.categoryFilter!.value).toBe("all");
     expect(elements.categoryInput!.value).toBe("");
-    expect(elements.categoryClear!.classList.toggle).toHaveBeenCalledWith("hidden", true);
+    expect(elements.categoryClear!.classList.toggle).toHaveBeenCalledWith(
+      "hidden",
+      true,
+    );
   });
 
   it("filterCategoryList filters list items by query", async () => {
-    const item1 = { textContent: "Minecraft", style: { display: "" }, classList: { remove: vi.fn(), add: vi.fn() } };
-    const item2 = { textContent: "Valorant", style: { display: "" }, classList: { remove: vi.fn(), add: vi.fn() } };
-    elements.categoryList = { querySelectorAll: vi.fn().mockReturnValue([item1, item2]) } as any;
+    const item1 = {
+      textContent: "Minecraft",
+      style: { display: "" },
+      classList: { remove: vi.fn(), add: vi.fn() },
+    };
+    const item2 = {
+      textContent: "Valorant",
+      style: { display: "" },
+      classList: { remove: vi.fn(), add: vi.fn() },
+    };
+    elements.categoryList = {
+      querySelectorAll: vi.fn().mockReturnValue([item1, item2]),
+    } as any;
 
     const { filterCategoryList } = await import("../categories");
     filterCategoryList("mine");
