@@ -1,5 +1,9 @@
 # Twitch Clip Explorer
 
+<p align="center">
+  <img src="public/og-image.webp" alt="Twitch Clip Explorer" width="256" />
+</p>
+
 A web application for browsing and downloading clips from Twitch streamers. Searches the Twitch API by channel name, displays results in a grid with filtering and sorting, and downloads clips via Twitch's GQL API.
 
 ## Prerequisites
