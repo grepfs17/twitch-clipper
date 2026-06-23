@@ -1,3 +1,7 @@
+import type { TwitchBudget } from "../scripts/types";
+
+export type { TwitchBudget } from "../scripts/types";
+
 export function isSameOrigin(request: Request): boolean {
   const origin = request.headers.get("origin");
   const referer = request.headers.get("referer");
@@ -13,11 +17,6 @@ function getClientIp(request: Request): string {
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     "unknown"
   );
-}
-
-export interface TwitchBudget {
-  remaining: number | null;
-  resetAt: number | null; // unix ms
 }
 
 const TWITCH_BUDGET_KEY = "twitch:budget";
