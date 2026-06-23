@@ -25,7 +25,7 @@ async function hydrateGameName(clip: any, token: string) {
   clip.game_name = name || "Loading...";
 }
 
-export const GET: APIRoute = async ({ request }) => {
+export const GET: APIRoute = async ({ request }: { request: Request }) => {
   const clipUrl = new URL(request.url).searchParams.get("url");
 
   if (!clipUrl) return json({ error: "Clip URL is required" }, 400);

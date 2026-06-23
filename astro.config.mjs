@@ -1,14 +1,12 @@
 // @ts-check
 import { defineConfig, envField } from "astro/config";
-import node from "@astrojs/node";
+import cloudflare from "@astrojs/cloudflare";
 
 // https://astro.build/config
 export default defineConfig({
   output: "server",
   site: "https://clipexplorer.grepfs.xyz/",
-  adapter: node({
-    mode: "standalone",
-  }),
+  adapter: cloudflare(),
   env: {
     schema: {
       TWITCH_CLIENT_ID: envField.string({

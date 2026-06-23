@@ -1,11 +1,10 @@
 # Twitch Clip Explorer
 
-A web application for browsing and downloading clips from Twitch streamers. Searches the Twitch API by channel name, displays results in a grid with filtering and sorting, and downloads clips via twitch-dlp.
+A web application for browsing and downloading clips from Twitch streamers. Searches the Twitch API by channel name, displays results in a grid with filtering and sorting, and downloads clips via Twitch's GQL API.
 
 ## Prerequisites
 
 - Node.js 22.12.0 or later
-- twitch-dlp installed globally: `npm install -g twitch-dlp`
 - A Twitch Developer client ID and secret (from [Twitch Developer Console](https://dev.twitch.tv/console))
 
 ## Setup
@@ -40,9 +39,24 @@ pnpm dev
 
 ## Build and deploy
 
+### Local development
+
+```
+pnpm dev
+```
+
+### Deploy to Cloudflare Pages
+
 ```
 pnpm build
 pnpm preview
+```
+
+Or deploy directly with Wrangler:
+
+```
+pnpm build
+npx wrangler deploy
 ```
 
 ## Project structure
@@ -54,7 +68,9 @@ src/
   pages/
     api/
       clips.ts         Proxy endpoint for fetching clips from Twitch API
-      download.ts      Server-side download handler using twitch-dlp
+      clips/
+        download.ts    Server-side download handler via GQL streaming proxy
+        formats.ts     Clip quality/format listing via GQL
     index.astro        Main page with search UI and clip grid
   scripts/
     index.ts           Application entry point, initializes all modules
@@ -79,6 +95,6 @@ src/
 - Filter clips by game category and sort by views, date, or oldest
 - Lazy-loaded clip grid with infinite scroll
 - Clip preview modal with Twitch embed player
-- Download clips in multiple qualities via twitch-dlp
+- Download clips in multiple qualities via Twitch GQL API
 - Recent searches stored in localStorage
 - Fixed progress bar for long-running full-library loads

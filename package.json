@@ -14,9 +14,8 @@
     "typecheck": "astro check"
   },
   "dependencies": {
-    "@astrojs/node": "^10.1.1",
-    "astro": "^6.3.7",
-    "twitch-dlp": "^0.6.2"
+    "@astrojs/cloudflare": "^13.7.0",
+    "astro": "^6.3.7"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
@@ -24,6 +23,7 @@
     "jsdom": "^29.1.1",
     "sharp": "^0.34.5",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.8",
+    "wrangler": "^4.83.0"
   }
 }

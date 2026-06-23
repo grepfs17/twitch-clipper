@@ -41,7 +41,7 @@ function attachGameNames(clips: any[]): any[] {
   }));
 }
 
-export const GET: APIRoute = async ({ request }) => {
+export const GET: APIRoute = async ({ request }: { request: Request }) => {
   const params = new URL(request.url).searchParams;
   const channel = params.get("channel");
   const timeRange = params.get("timeRange") || "all";

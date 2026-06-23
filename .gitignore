@@ -29,3 +29,4 @@ pnpm-debug.log*
 *lock*
 opencode.json
 ecosystem.config.js
+.wrangler/
