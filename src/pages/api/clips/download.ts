@@ -7,18 +7,11 @@ import {
 } from "../../../lib/twitch-gql";
 import { isSameOrigin, checkRateLimit } from "../../../lib/utils";
 
-const QUALITY_TO_FORMAT: Record<string, string> = {
-  best: "best",
-  worst: "worst",
-  "360": "360",
-  "480": "480",
-  "720": "720",
-  "1080": "1080",
-  "portrait-360": "portrait-360",
-  "portrait-480": "portrait-480",
-  "portrait-720": "portrait-720",
-  "portrait-1080": "portrait-1080",
-};
+// Allowed quality IDs that the formats endpoint can return. We validate
+// the input here rather than aliasing to a fixed set, so newly added
+// portrait heights (e.g. portrait-640, portrait-853) work without
+// needing a code change.
+const ALLOWED_QUALITY = /^(best|worst|360|480|720|1080|portrait-(360|480|640|720|853|1080))$/;
 
 function sanitizeFilename(name: string): string {
   return name
@@ -104,7 +97,8 @@ export const GET: APIRoute = async ({ request }: any) => {
   const params = new URL(request.url).searchParams;
   const clipUrl = params.get("url");
   const clipTitle = params.get("title") || "";
-  const quality = QUALITY_TO_FORMAT[params.get("quality") || "best"] || "best";
+  const rawQuality = params.get("quality") || "best";
+  const quality = ALLOWED_QUALITY.test(rawQuality) ? rawQuality : "best";
 
   if (!clipUrl) return jsonError("Clip URL is required", 400);
 
