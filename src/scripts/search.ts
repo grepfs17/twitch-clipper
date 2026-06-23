@@ -467,8 +467,7 @@ function resetSearchUI() {
   syncLoadAllBtn();
   setAllClips([]);
   setDisplayedClips([]);
-  if (elements.filterSearchInput) elements.filterSearchInput.value = "";
-  elements.filterSearchClear?.classList.add("hidden");
+  resetFilters();
 
   elements.resultsSection?.classList.remove("hidden");
   hideCacheIndicator();
@@ -476,6 +475,18 @@ function resetSearchUI() {
   elements.loader?.classList.remove("hidden");
   elements.emptyState?.classList.add("hidden");
   if (elements.loaderText) elements.loaderText.textContent = "";
+}
+
+function resetFilters() {
+  if (elements.filterSearchInput) elements.filterSearchInput.value = "";
+  elements.filterSearchClear?.classList.add("hidden");
+
+  if (elements.categoryFilter) elements.categoryFilter.value = "all";
+  if (elements.categoryInput) elements.categoryInput.value = "";
+  elements.categoryClear?.classList.add("hidden");
+  elements.categoryList?.classList.remove("open");
+
+  if (elements.sortFilter) elements.sortFilter.value = "views";
 }
 
 function hideLoader() {
