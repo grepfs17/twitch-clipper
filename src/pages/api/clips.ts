@@ -11,6 +11,7 @@ import {
   isSameOrigin,
   checkTwitchBudget,
   writeTwitchBudget,
+  json,
 } from "../../lib/utils";
 
 const gameNameCache = new Map<string, string>();
@@ -208,11 +209,4 @@ interface KVNamespace {
     value: string,
     opts?: { expirationTtl?: number },
   ): Promise<void>;
-}
-
-function json(body: unknown, status: number) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
 }

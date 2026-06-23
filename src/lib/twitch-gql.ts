@@ -1,4 +1,8 @@
 // This is a public key used by Twitch
+import { jsonError } from "./utils";
+
+export { jsonError };
+
 const TWITCH_GQL_CLIENT_ID = "kimne78kx3ncx6brgo4mv6wki5h1ko";
 
 const SHARE_CLIP_QUERY = {
@@ -33,11 +37,4 @@ export async function getClipMetadata(slug: string): Promise<any> {
 
   const data = (await res.json()) as Array<{ data?: { clip?: unknown } }>;
   return data[0]?.data?.clip || null;
-}
-
-export function jsonError(message: string, status: number) {
-  return new Response(JSON.stringify({ error: message }), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
 }

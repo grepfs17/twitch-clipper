@@ -2,20 +2,13 @@ import type { APIRoute } from "astro";
 import { env } from "cloudflare:workers";
 import { TWITCH_CLIENT_ID } from "astro:env/server";
 import { getAccessToken, getGames } from "../../../lib/twitch";
-import { isSameOrigin, checkRateLimit } from "../../../lib/utils";
+import { isSameOrigin, checkRateLimit, json } from "../../../lib/utils";
 import type { TwitchClip } from "../../../scripts/types";
 
 const CLIP_SLUG_REGEX = /(?:clips\.twitch\.tv\/|clip\/)([\w-]+)/i;
 
 function extractClipSlug(clipUrl: string): string | null {
   return clipUrl.match(CLIP_SLUG_REGEX)?.[1] ?? null;
-}
-
-function json(body: unknown, status: number) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
 }
 
 async function hydrateGameName(clip: TwitchClip, token: string) {

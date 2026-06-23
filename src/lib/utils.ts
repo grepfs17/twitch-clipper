@@ -2,6 +2,17 @@ import type { TwitchBudget } from "../scripts/types";
 
 export type { TwitchBudget } from "../scripts/types";
 
+export function json(body: unknown, status: number): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+export function jsonError(message: string, status: number): Response {
+  return json({ error: message }, status);
+}
+
 export function isSameOrigin(request: Request): boolean {
   const origin = request.headers.get("origin");
   const referer = request.headers.get("referer");
