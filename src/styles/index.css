@@ -984,14 +984,14 @@ input[type="text"]#channelInput::placeholder {
     position: fixed;
     top: 1rem;
     right: 1rem;
-    z-index: 100;
+    z-index: 600;
     display: flex;
     align-items: center;
     gap: 0.4rem;
     padding: 0.4rem 0.75rem;
     border: 1px solid var(--border);
     background: var(--bg-2);
-    color: var(--amber);
+    color: var(--text-dim);
     font-size: 0.75rem;
     transition: color 0.2s, border-color 0.2s;
 }
