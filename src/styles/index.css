@@ -991,7 +991,7 @@ input[type="text"]#channelInput::placeholder {
     padding: 0.4rem 0.75rem;
     border: 1px solid var(--border);
     background: var(--bg-2);
-    color: var(--text-dim);
+    color: var(--amber);
     font-size: 0.75rem;
     transition: color 0.2s, border-color 0.2s;
 }
