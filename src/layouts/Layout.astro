@@ -47,7 +47,16 @@ const siteName = "Twitch Clip Explorer";
                 "description": {JSON.stringify(description)},
                 "applicationCategory": "Multimedia",
                 "operatingSystem": "Web",
-                "browserRequirements": "Requires JavaScript"
+                "browserRequirements": "Requires JavaScript",
+                "sameAs": ["https://github.com/grepfs17/twitch-clipper"],
+                "potentialAction": {
+                    "@type": "SearchAction",
+                    "target": {
+                        "@type": "EntryPoint",
+                        "urlTemplate": {JSON.stringify(`${canonicalURL.toString()}?channel={search_term_string}`)}
+                    },
+                    "query-input": "required name=search_term_string"
+                }
             }
         </script>
 
