@@ -73,7 +73,7 @@ export async function checkTwitchBudget(
 export async function checkRateLimit(
   request: Request,
   env: { RATE_LIMIT_KV?: { get(key: string): Promise<string | null>; put(key: string, value: string, opts?: { expirationTtl?: number }): Promise<void> } },
-  { maxRequests = 120, windowSec = 60 } = {},
+  { maxRequests = 120, windowSec = 60, scope }: { maxRequests?: number; windowSec?: number; scope?: string } = {},
 ): Promise<{ allowed: boolean; retryAfter?: number }> {
   if (import.meta.env.DEV) return { allowed: true };
 
@@ -81,7 +81,10 @@ export async function checkRateLimit(
   if (!kv) return { allowed: true };
 
   const ip = getClientIp(request);
-  const key = `rl:${ip}`;
+  // Scope the counter by endpoint so a flood on /api/clips doesn't
+  // starve unrelated endpoints (e.g. /api/clips/formats) of their
+  // own per-IP budget.
+  const key = scope ? `rl:${scope}:${ip}` : `rl:${ip}`;
   const now = Math.floor(Date.now() / 1000);
   const windowStart = now - windowSec;
 

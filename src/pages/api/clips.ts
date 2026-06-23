@@ -69,6 +69,7 @@ export const GET: APIRoute = async ({ request }: any) => {
   const rateLimit = await checkRateLimit(request, env, {
     maxRequests: 120,
     windowSec: 60,
+    scope: new URL(request.url).pathname,
   });
   if (!rateLimit.allowed) {
     return new Response(JSON.stringify({ error: "Too many requests" }), {

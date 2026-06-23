@@ -176,17 +176,47 @@ async function fetchAndPopulateFormats(clipUrl: string) {
 
   resetQualitySelector();
 
-  try {
-    const res = await fetch(
-      `/api/clips/formats?url=${encodeURIComponent(clipUrl)}`,
-    );
-    if (!res.ok) return;
-    const data = await res.json();
-    if (data.options?.length) {
-      populateQualityOptions(data.options);
+  const url = `/api/clips/formats?url=${encodeURIComponent(clipUrl)}`;
+  let attempt = 0;
+  const maxAttempts = 3;
+  let lastErr: unknown = null;
+
+  while (attempt < maxAttempts) {
+    attempt++;
+    try {
+      const res = await fetch(url);
+      if (res.status === 429) {
+        const retryAfter = Number(res.headers.get("Retry-After") || "1");
+        if (attempt < maxAttempts) {
+          await new Promise((r) => setTimeout(r, retryAfter * 1000));
+          continue;
+        }
+        // Out of retries — leave the dropdown at "Best Quality" but
+        // surface the error in the console so it's debuggable.
+        console.warn(
+          "Qualities fetch rate-limited; using default. Retry-After:",
+          retryAfter,
+        );
+        return;
+      }
+      if (!res.ok) {
+        console.warn("Qualities fetch failed:", res.status);
+        return;
+      }
+      const data = await res.json();
+      if (data.options?.length) {
+        populateQualityOptions(data.options);
+      }
+      return;
+    } catch (err) {
+      lastErr = err;
+      if (attempt < maxAttempts) {
+        await new Promise((r) => setTimeout(r, 250 * attempt));
+        continue;
+      }
+      console.warn("Qualities fetch error:", lastErr);
+      return;
     }
-  } catch {
-    // Keep the default "Best Quality" option on failure
   }
 }
 
