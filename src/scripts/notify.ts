@@ -12,14 +12,28 @@ export function terminalConfirm(
 
     const banner = document.createElement("div");
     banner.className = "notify-banner";
-    banner.innerHTML = `
-            <span class="notify-prompt">&gt;_</span>
-            <span class="notify-msg">${message}</span>
-            <div class="notify-actions">
-                <button class="notify-yes">[${yesText}]</button>
-                <button class="notify-no">[${noText}]</button>
-            </div>
-        `;
+
+    const prompt = document.createElement("span");
+    prompt.className = "notify-prompt";
+    prompt.textContent = ">_";
+
+    const msg = document.createElement("span");
+    msg.className = "notify-msg";
+    msg.textContent = message;
+
+    const actions = document.createElement("div");
+    actions.className = "notify-actions";
+
+    const yesBtn = document.createElement("button");
+    yesBtn.className = "notify-yes";
+    yesBtn.textContent = `[${yesText}]`;
+
+    const noBtn = document.createElement("button");
+    noBtn.className = "notify-no";
+    noBtn.textContent = `[${noText}]`;
+
+    actions.append(yesBtn, noBtn);
+    banner.append(prompt, msg, actions);
     document.body.appendChild(banner);
 
     // Animate in on next frame
@@ -31,12 +45,8 @@ export function terminalConfirm(
       resolve(result);
     };
 
-    banner
-      .querySelector<HTMLButtonElement>(".notify-yes")!
-      .addEventListener("click", () => cleanup(true));
-    banner
-      .querySelector<HTMLButtonElement>(".notify-no")!
-      .addEventListener("click", () => cleanup(false));
+    yesBtn.addEventListener("click", () => cleanup(true));
+    noBtn.addEventListener("click", () => cleanup(false));
   });
 }
 
@@ -46,10 +56,16 @@ export function terminalToast(message: string, durationMs = 3000): void {
 
   const banner = document.createElement("div");
   banner.className = "notify-banner notify-toast";
-  banner.innerHTML = `
-        <span class="notify-prompt">//</span>
-        <span class="notify-msg">${message}</span>
-    `;
+
+  const prompt = document.createElement("span");
+  prompt.className = "notify-prompt";
+  prompt.textContent = "//";
+
+  const msg = document.createElement("span");
+  msg.className = "notify-msg";
+  msg.textContent = message;
+
+  banner.append(prompt, msg);
   document.body.appendChild(banner);
   requestAnimationFrame(() => banner.classList.add("notify-visible"));
   setTimeout(() => {

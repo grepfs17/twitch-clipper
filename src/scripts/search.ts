@@ -512,7 +512,7 @@ async function loadFromCacheIfPresent(channel: string): Promise<boolean> {
   elements.loader?.classList.add("hidden");
 
   const useCached = await terminalConfirm(
-    `Found <strong>${cached.clips.length.toLocaleString()} cached clips</strong> for <strong>${channel}</strong> (saved ${ageLabel}). Load from cache?`,
+    `Found ${cached.clips.length.toLocaleString()} cached clips for ${channel} (saved ${ageLabel}). Load from cache?`,
     "USE CACHE",
     "FETCH FRESH",
   );

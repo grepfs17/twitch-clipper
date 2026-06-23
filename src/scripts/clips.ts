@@ -1,6 +1,6 @@
 import { elements } from "./dom";
 import { openClipModal } from "./modal";
-import { toggleFavorite, isFavorite } from "./favorites";
+import { toggleFavorite, isFavorite, escapeHtml } from "./favorites";
 
 export let allClips: any[] = [];
 let displayedClips: any[] = [];
@@ -40,7 +40,7 @@ function buildClipCard(clip: any): HTMLDivElement {
   card.dataset.clipUrl = clip.url;
   card.innerHTML = `
         <div class="thumb-container">
-            <img src="${clip.thumbnail_url}" alt="${clip.title}" loading="lazy" />
+            <img src="${escapeHtml(clip.thumbnail_url)}" alt="${escapeHtml(clip.title)}" loading="lazy" />
             <div class="clip-overlay top">
                 <span class="views-badge">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
@@ -52,16 +52,16 @@ function buildClipCard(clip: any): HTMLDivElement {
             </div>
         </div>
         <div class="clip-info">
-            <h3 class="clip-title">${clip.title}</h3>
+            <h3 class="clip-title">${escapeHtml(clip.title)}</h3>
             <div class="clip-meta">
-                <span class="clip-creator">${clip.creator_name}</span>
+                <span class="clip-creator">${escapeHtml(clip.creator_name)}</span>
                 <span class="meta-dot"></span>
-                <span class="clip-game">${clip.game_name}</span>
+                <span class="clip-game">${escapeHtml(clip.game_name)}</span>
                 <span class="meta-dot"></span>
                 <span class="clip-date">${date}</span>
             </div>
         </div>
-        <button type="button" class="fav-btn" data-clip-url="${clip.url}" aria-label="Toggle favorite">
+        <button type="button" class="fav-btn" data-clip-url="${escapeHtml(clip.url)}" aria-label="Toggle favorite">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" class="fav-icon"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
         </button>
     `;
