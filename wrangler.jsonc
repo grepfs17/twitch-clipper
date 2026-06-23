@@ -14,7 +14,13 @@
     },
     {
       "binding": "CLIP_CACHE_KV",
-      "id": "REPLACE_WITH_REAL_NAMESPACE_ID"
+      "id": "7a27ee73731e466b96c3f155ba89cf53"
+    }
+  ],
+  "routes": [
+    {
+      "pattern": "twitchclipexplorer.grepfs.xyz/*",
+      "custom_domain": true
     }
   ]
 }

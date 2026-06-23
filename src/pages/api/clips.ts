@@ -7,7 +7,12 @@ import {
   getGames,
   TwitchError,
 } from "../../lib/twitch";
-import { isSameOrigin, checkRateLimit } from "../../lib/utils";
+import {
+  isSameOrigin,
+  checkRateLimit,
+  checkTwitchBudget,
+  writeTwitchBudget,
+} from "../../lib/utils";
 
 const gameNameCache = new Map<string, string>();
 const CLIP_PAGE_CACHE_TTL = 60; // seconds
@@ -38,10 +43,14 @@ function clipPageCacheKey(
   return `clips:${broadcasterId}:${startedAt ?? ""}:${endedAt ?? ""}:${after ?? ""}`;
 }
 
-async function hydrateGameNameCache(gameIds: string[], token: string) {
+async function hydrateGameNameCache(
+  gameIds: string[],
+  token: string,
+  onBudget?: (b: { remaining: number | null; resetAt: number | null }) => void,
+) {
   const uncached = gameIds.filter((id) => !gameNameCache.has(id));
   if (uncached.length === 0) return;
-  const games = await getGames(uncached, token);
+  const games = await getGames(uncached, token, { onBudget });
   for (const g of games) gameNameCache.set(g.id, g.name);
 }
 
@@ -58,7 +67,7 @@ export const GET: APIRoute = async ({ request }: any) => {
   if (!isSameOrigin(request)) return json({ error: "Forbidden" }, 403);
 
   const rateLimit = await checkRateLimit(request, env, {
-    maxRequests: 30,
+    maxRequests: 60,
     windowSec: 60,
   });
   if (!rateLimit.allowed) {
@@ -69,6 +78,23 @@ export const GET: APIRoute = async ({ request }: any) => {
         "Retry-After": String(rateLimit.retryAfter),
       },
     });
+  }
+
+  const twitchBudget = await checkTwitchBudget(env);
+  if (!twitchBudget.allowed) {
+    return new Response(
+      JSON.stringify({
+        error: "Twitch rate limit reached. Please slow down.",
+        retryAfter: twitchBudget.retryAfter ?? 5,
+      }),
+      {
+        status: 429,
+        headers: {
+          "Content-Type": "application/json",
+          "Retry-After": String(twitchBudget.retryAfter ?? 5),
+        },
+      },
+    );
   }
 
   const params = new URL(request.url).searchParams;
@@ -112,6 +138,8 @@ export const GET: APIRoute = async ({ request }: any) => {
         ended_at: endedAt,
         first: 100,
         after,
+        onBudget: (b) =>
+          writeTwitchBudget(env, b.remaining, b.resetAt),
       });
       if (cacheKv && clipsData.data.length > 0 && !clipsData.pagination.cursor) {
         // Only cache the final page of a window — cursors are opaque and
@@ -132,7 +160,11 @@ export const GET: APIRoute = async ({ request }: any) => {
       ...new Set(clipsData.data.map((clip: any) => clip.game_id)),
     ].filter((id) => id !== "") as string[];
 
-    await hydrateGameNameCache(gameIds, token);
+    await hydrateGameNameCache(
+      gameIds,
+      token,
+      (b) => writeTwitchBudget(env, b.remaining, b.resetAt),
+    );
 
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     const rl = clipsData.rateLimit;

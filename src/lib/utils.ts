@@ -15,10 +15,65 @@ function getClientIp(request: Request): string {
   );
 }
 
+export interface TwitchBudget {
+  remaining: number | null;
+  resetAt: number | null; // unix ms
+}
+
+const TWITCH_BUDGET_KEY = "twitch:budget";
+// Twitch's documented limit is 800 req/min per client_id. We start shedding
+// load well before that to leave headroom for retries and other endpoints.
+const TWITCH_BUDGET_FLOOR = 50;
+
+export async function readTwitchBudget(
+  env: { RATE_LIMIT_KV?: { get(key: string): Promise<string | null>; put(key: string, value: string, opts?: { expirationTtl?: number }): Promise<void> } },
+): Promise<TwitchBudget> {
+  const kv = env.RATE_LIMIT_KV;
+  if (!kv) return { remaining: null, resetAt: null };
+  const raw = await kv.get(TWITCH_BUDGET_KEY);
+  if (!raw) return { remaining: null, resetAt: null };
+  try {
+    const parsed = JSON.parse(raw) as TwitchBudget;
+    return {
+      remaining: typeof parsed.remaining === "number" ? parsed.remaining : null,
+      resetAt: typeof parsed.resetAt === "number" ? parsed.resetAt : null,
+    };
+  } catch {
+    return { remaining: null, resetAt: null };
+  }
+}
+
+export async function writeTwitchBudget(
+  env: { RATE_LIMIT_KV?: { get(key: string): Promise<string | null>; put(key: string, value: string, opts?: { expirationTtl?: number }): Promise<void> } },
+  remaining: number | null,
+  resetAt: number | null,
+): Promise<void> {
+  const kv = env.RATE_LIMIT_KV;
+  if (!kv) return;
+  const value: TwitchBudget = { remaining, resetAt };
+  // Keep the budget record around for 2x the typical reset window (Twitch
+  // resets every 60s, so 120s is plenty).
+  await kv.put(TWITCH_BUDGET_KEY, JSON.stringify(value), {
+    expirationTtl: 120,
+  });
+}
+
+export async function checkTwitchBudget(
+  env: { RATE_LIMIT_KV?: { get(key: string): Promise<string | null>; put(key: string, value: string, opts?: { expirationTtl?: number }): Promise<void> } },
+): Promise<{ allowed: boolean; retryAfter?: number; remaining: number | null }> {
+  if (import.meta.env.DEV) return { allowed: true, remaining: null };
+  const { remaining, resetAt } = await readTwitchBudget(env);
+  if (remaining == null) return { allowed: true, remaining: null };
+  if (remaining > TWITCH_BUDGET_FLOOR) return { allowed: true, remaining };
+  const waitSec =
+    resetAt != null ? Math.max(1, Math.ceil((resetAt - Date.now()) / 1000)) : 5;
+  return { allowed: false, retryAfter: waitSec, remaining };
+}
+
 export async function checkRateLimit(
   request: Request,
   env: { RATE_LIMIT_KV?: { get(key: string): Promise<string | null>; put(key: string, value: string, opts?: { expirationTtl?: number }): Promise<void> } },
-  { maxRequests = 30, windowSec = 60 } = {},
+  { maxRequests = 60, windowSec = 60 } = {},
 ): Promise<{ allowed: boolean; retryAfter?: number }> {
   if (import.meta.env.DEV) return { allowed: true };
 

@@ -117,6 +117,9 @@ export async function twitchFetch(
   url: string,
   token: string,
   maxAttempts = 4,
+  options: {
+    onBudget?: (budget: TwitchRateLimitInfo) => void | Promise<void>;
+  } = {},
 ): Promise<{ data: any; rateLimit: TwitchRateLimitInfo }> {
   const clientId = getTwitchClientId();
   let lastError: TwitchError | null = null;
@@ -130,6 +133,9 @@ export async function twitchFetch(
     });
 
     const rateLimit = parseRateLimitHeaders(response.headers);
+    if (rateLimit.remaining != null || rateLimit.resetAt != null) {
+      await options.onBudget?.(rateLimit);
+    }
 
     if (response.ok) {
       const data = await response.json();
@@ -190,6 +196,7 @@ export async function getClips(
     ended_at?: string;
     first?: number;
     after?: string;
+    onBudget?: (budget: TwitchRateLimitInfo) => void | Promise<void>;
   } = {},
 ) {
   const url = new URL("https://api.twitch.tv/helix/clips");
@@ -201,7 +208,9 @@ export async function getClips(
   if (options.first) url.searchParams.append("first", options.first.toString());
   if (options.after) url.searchParams.append("after", options.after);
 
-  const { data, rateLimit } = await twitchFetch(url.toString(), token);
+  const { data, rateLimit } = await twitchFetch(url.toString(), token, 4, {
+    onBudget: options.onBudget,
+  });
 
   return {
     data: data.data as Array<{ game_id: string; [k: string]: unknown }>,
@@ -210,7 +219,13 @@ export async function getClips(
   };
 }
 
-export async function getGames(gameIds: string[], token: string) {
+export async function getGames(
+  gameIds: string[],
+  token: string,
+  options: {
+    onBudget?: (budget: TwitchRateLimitInfo) => void | Promise<void>;
+  } = {},
+) {
   if (gameIds.length === 0) return [];
 
   const url = new URL("https://api.twitch.tv/helix/games");
@@ -218,6 +233,8 @@ export async function getGames(gameIds: string[], token: string) {
   // Twitch allows up to 100 IDs per request
   gameIds.forEach((id) => url.searchParams.append("id", id));
 
-  const { data } = await twitchFetch(url.toString(), token);
+  const { data } = await twitchFetch(url.toString(), token, 4, {
+    onBudget: options.onBudget,
+  });
   return data.data as Array<{ id: string; name: string }>;
 }
