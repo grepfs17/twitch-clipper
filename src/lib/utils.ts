@@ -20,6 +20,8 @@ export async function checkRateLimit(
   env: { RATE_LIMIT_KV?: { get(key: string): Promise<string | null>; put(key: string, value: string, opts?: { expirationTtl?: number }): Promise<void> } },
   { maxRequests = 30, windowSec = 60 } = {},
 ): Promise<{ allowed: boolean; retryAfter?: number }> {
+  if (import.meta.env.DEV) return { allowed: true };
+
   const kv = env.RATE_LIMIT_KV;
   if (!kv) return { allowed: true };
 

@@ -31,7 +31,7 @@ export async function getClipMetadata(slug: string): Promise<any> {
     throw new Error(`GQL request failed: ${res.status} ${res.statusText}`);
   }
 
-  const data = await res.json();
+  const data = (await res.json()) as Array<{ data?: { clip?: unknown } }>;
   return data[0]?.data?.clip || null;
 }
 

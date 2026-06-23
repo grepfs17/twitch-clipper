@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { env } from "cloudflare:workers";
 import {
   extractClipSlug,
   getClipMetadata,
@@ -82,10 +83,9 @@ function findFormatUrl(clipMeta: any, quality: string): string | null {
   return null;
 }
 
-export const GET: APIRoute = async ({ request, locals }: any) => {
+export const GET: APIRoute = async ({ request }: any) => {
   if (!isSameOrigin(request)) return jsonError("Forbidden", 403);
 
-  const env = locals?.runtime?.env || {};
   const rateLimit = await checkRateLimit(request, env, {
     maxRequests: 10,
     windowSec: 60,

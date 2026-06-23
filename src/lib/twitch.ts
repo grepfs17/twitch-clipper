@@ -38,7 +38,7 @@ export async function getAccessToken() {
     throw new Error(`Failed to get access token: ${JSON.stringify(error)}`);
   }
 
-  const data = await response.json();
+  const data = (await response.json()) as { access_token: string; expires_in?: number };
   _cachedToken = data.access_token;
   _tokenExpiresAt = Date.now() + (data.expires_in ?? 3600) * 1000;
   return _cachedToken!;
@@ -61,7 +61,7 @@ export async function getBroadcasterId(login: string, token: string) {
     throw new Error("Failed to fetch user");
   }
 
-  const data = await response.json();
+  const data = (await response.json()) as { data: Array<{ id: string }> };
   if (data.data.length === 0) {
     return null;
   }
@@ -100,7 +100,10 @@ export async function getClips(
     throw new Error("Failed to fetch clips");
   }
 
-  return await response.json();
+  return (await response.json()) as {
+    data: Array<{ game_id: string; [k: string]: unknown }>;
+    pagination: { cursor?: string };
+  };
 }
 
 export async function getGames(gameIds: string[], token: string) {
@@ -123,6 +126,6 @@ export async function getGames(gameIds: string[], token: string) {
     throw new Error("Failed to fetch games");
   }
 
-  const data = await response.json();
+  const data = (await response.json()) as { data: Array<{ id: string; name: string }> };
   return data.data;
 }

@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { env } from "cloudflare:workers";
 import {
   getAccessToken,
   getBroadcasterId,
@@ -42,10 +43,9 @@ function attachGameNames(clips: any[]): any[] {
   }));
 }
 
-export const GET: APIRoute = async ({ request, locals }: any) => {
+export const GET: APIRoute = async ({ request }: any) => {
   if (!isSameOrigin(request)) return json({ error: "Forbidden" }, 403);
 
-  const env = locals?.runtime?.env || {};
   const rateLimit = await checkRateLimit(request, env, {
     maxRequests: 30,
     windowSec: 60,

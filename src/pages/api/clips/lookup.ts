@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { env } from "cloudflare:workers";
 import { TWITCH_CLIENT_ID } from "astro:env/server";
 import { getAccessToken, getGames } from "../../../lib/twitch";
 import { isSameOrigin, checkRateLimit } from "../../../lib/utils";
@@ -26,10 +27,9 @@ async function hydrateGameName(clip: any, token: string) {
   clip.game_name = name || "Loading...";
 }
 
-export const GET: APIRoute = async ({ request, locals }: any) => {
+export const GET: APIRoute = async ({ request }: any) => {
   if (!isSameOrigin(request)) return json({ error: "Forbidden" }, 403);
 
-  const env = locals?.runtime?.env || {};
   const rateLimit = await checkRateLimit(request, env, {
     maxRequests: 30,
     windowSec: 60,
