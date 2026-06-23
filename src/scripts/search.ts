@@ -125,7 +125,7 @@ async function fetchWindow(
   range: string,
   win: TimeWindow,
   onProgress?: (n: number) => void,
-  pageDelay = 250,
+  pageDelay = 100,
 ): Promise<any[]> {
   const maxClips = parseInt(import.meta.env.PUBLIC_MAX_CLIPS || "50000", 10);
   const result: any[] = [];
@@ -148,9 +148,15 @@ async function fetchWindow(
       if (err instanceof ClipsFetchError) {
         if (err.status === 429) {
           const wait = (err.retryAfter ?? 5) * 1000;
-          terminalToast(
-            `Twitch rate limit hit, waiting ${Math.ceil(wait / 1000)}s…`,
-          );
+          const message =
+            err.source === "twitch"
+              ? `Twitch rate limit hit, waiting ${Math.ceil(wait / 1000)}s…`
+              : err.source === "twitch-budget"
+                ? `Server is pacing requests to Twitch, waiting ${Math.ceil(wait / 1000)}s…`
+                : err.source === "kv"
+                  ? `Local rate limit hit, waiting ${Math.ceil(wait / 1000)}s…`
+                  : `Rate limit hit, waiting ${Math.ceil(wait / 1000)}s…`;
+          terminalToast(message);
           await new Promise((r) => setTimeout(r, wait));
           continue;
         }
@@ -170,8 +176,8 @@ async function fetchWindow(
     // is getting low so the parallel windows don't all hammer at once.
     let delay = pageDelay;
     if (budget.remaining != null) {
-      if (budget.remaining <= 20) delay = Math.max(delay, 2000);
-      else if (budget.remaining <= 100) delay = Math.max(delay, 750);
+      if (budget.remaining <= 5) delay = Math.max(delay, 1500);
+      else if (budget.remaining <= 30) delay = Math.max(delay, 400);
     }
     if (budget.resetAt != null) {
       const msUntilReset = budget.resetAt - Date.now();
@@ -308,7 +314,7 @@ async function runLoadAllWindowPool(
   pendingWindows.length = 0;
 
   await asyncPool(
-    2,
+    3,
     windows,
     async (win) => {
       const batch = await fetchWindow(currentChannel, range, win);

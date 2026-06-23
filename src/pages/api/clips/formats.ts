@@ -28,15 +28,16 @@ function extractFormats(clipMeta: any): FormatOption[] {
   const portrait: FormatOption[] = [];
 
   for (const asset of clipMeta.assets) {
-    // Trust the asset id (e.g. ".../LANDSCAPE", ".../PORTRAIT") over the
-    // array index — Twitch has shipped clips with only one of the two
-    // assets, and the order is not guaranteed.
+    // Trust the asset id (e.g. ".../LANDSCAPE", ".../PORTRAIT") over
+    // the array index. Twitch's GQL playback token signs the asset's
+    // path prefix and works for ANY videoQuality under the same asset
+    // (per yt-dlp's TwitchClipsIE), so we can expose both landscape
+    // and portrait options from a single playback token.
     const isPortrait = /PORTRAIT$/i.test(asset.id || "");
     const videoQualities = asset.videoQualities || [];
 
     for (const quality of videoQualities) {
       if (!quality.sourceURL) continue;
-
       // Label and select by *height* (the larger dimension) — Twitch's
       // `quality` field for portrait is actually the width, which is
       // confusing for users. Falling back to `quality` only if `height`

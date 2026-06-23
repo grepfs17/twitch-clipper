@@ -23,7 +23,7 @@ export interface TwitchBudget {
 const TWITCH_BUDGET_KEY = "twitch:budget";
 // Twitch's documented limit is 800 req/min per client_id. We start shedding
 // load well before that to leave headroom for retries and other endpoints.
-const TWITCH_BUDGET_FLOOR = 50;
+const TWITCH_BUDGET_FLOOR = 20;
 
 export async function readTwitchBudget(
   env: { RATE_LIMIT_KV?: { get(key: string): Promise<string | null>; put(key: string, value: string, opts?: { expirationTtl?: number }): Promise<void> } },
@@ -73,7 +73,7 @@ export async function checkTwitchBudget(
 export async function checkRateLimit(
   request: Request,
   env: { RATE_LIMIT_KV?: { get(key: string): Promise<string | null>; put(key: string, value: string, opts?: { expirationTtl?: number }): Promise<void> } },
-  { maxRequests = 60, windowSec = 60 } = {},
+  { maxRequests = 120, windowSec = 60 } = {},
 ): Promise<{ allowed: boolean; retryAfter?: number }> {
   if (import.meta.env.DEV) return { allowed: true };
 

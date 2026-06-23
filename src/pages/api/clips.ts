@@ -67,7 +67,7 @@ export const GET: APIRoute = async ({ request }: any) => {
   if (!isSameOrigin(request)) return json({ error: "Forbidden" }, 403);
 
   const rateLimit = await checkRateLimit(request, env, {
-    maxRequests: 60,
+    maxRequests: 120,
     windowSec: 60,
   });
   if (!rateLimit.allowed) {
@@ -76,6 +76,7 @@ export const GET: APIRoute = async ({ request }: any) => {
       headers: {
         "Content-Type": "application/json",
         "Retry-After": String(rateLimit.retryAfter),
+        "X-RateLimit-Source": "kv",
       },
     });
   }
@@ -84,7 +85,7 @@ export const GET: APIRoute = async ({ request }: any) => {
   if (!twitchBudget.allowed) {
     return new Response(
       JSON.stringify({
-        error: "Twitch rate limit reached. Please slow down.",
+        error: "Server is pacing requests to stay under Twitch's limit. Please slow down.",
         retryAfter: twitchBudget.retryAfter ?? 5,
       }),
       {
@@ -92,6 +93,7 @@ export const GET: APIRoute = async ({ request }: any) => {
         headers: {
           "Content-Type": "application/json",
           "Retry-After": String(twitchBudget.retryAfter ?? 5),
+          "X-RateLimit-Source": "twitch-budget",
         },
       },
     );
@@ -186,6 +188,7 @@ export const GET: APIRoute = async ({ request }: any) => {
         const headers: Record<string, string> = {
           "Content-Type": "application/json",
           "Retry-After": String(error.retryAfter ?? 5),
+          "X-RateLimit-Source": "twitch",
         };
         if (error.rateLimit.remaining != null)
           headers["X-Twitch-Ratelimit-Remaining"] = String(error.rateLimit.remaining);

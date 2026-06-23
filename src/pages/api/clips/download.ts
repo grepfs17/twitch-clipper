@@ -41,7 +41,11 @@ function findFormatUrl(clipMeta: any, quality: string): string | null {
   const targetHeight = parseInt(quality.replace("portrait-", "")) || 0;
 
   for (const asset of clipMeta.assets) {
-    // Match by asset id tag (LANDSCAPE/PORTRAIT), not array index
+    // Match by asset id tag (LANDSCAPE/PORTRAIT), not array index.
+    // The single playback token returned by ShareClipRenderStatus works
+    // for any videoQuality under the same asset id prefix (per
+    // yt-dlp's TwitchClipsIE), so portrait and landscape can be
+    // downloaded with the same token.
     const assetIsPortrait = /PORTRAIT$/i.test(asset.id || "");
     if (isPortrait !== assetIsPortrait) continue;
 

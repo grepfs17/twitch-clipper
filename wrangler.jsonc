@@ -19,7 +19,7 @@
   ],
   "routes": [
     {
-      "pattern": "twitchclipexplorer.grepfs.xyz/*",
+      "pattern": "twitchclipexplorer.grepfs.xyz",
       "custom_domain": true
     }
   ]

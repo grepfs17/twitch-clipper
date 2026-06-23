@@ -1,11 +1,18 @@
 export class ClipsFetchError extends Error {
   status: number;
   retryAfter: number | null;
-  constructor(message: string, status: number, retryAfter: number | null) {
+  source: "twitch" | "twitch-budget" | "kv" | "unknown";
+  constructor(
+    message: string,
+    status: number,
+    retryAfter: number | null,
+    source: "twitch" | "twitch-budget" | "kv" | "unknown" = "unknown",
+  ) {
     super(message);
     this.name = "ClipsFetchError";
     this.status = status;
     this.retryAfter = retryAfter;
+    this.source = source;
   }
 }
 
@@ -37,6 +44,13 @@ export async function fetchClips(
   if (!res.ok) {
     const retryAfterRaw = res.headers.get("Retry-After");
     const retryAfter = retryAfterRaw ? Number(retryAfterRaw) : null;
+    const sourceRaw = res.headers.get("X-RateLimit-Source");
+    const source: "twitch" | "twitch-budget" | "kv" | "unknown" =
+      sourceRaw === "twitch" ||
+      sourceRaw === "twitch-budget" ||
+      sourceRaw === "kv"
+        ? sourceRaw
+        : "unknown";
     let message = "Failed to fetch clips";
     try {
       const body = (await res.json()) as { error?: string };
@@ -44,7 +58,7 @@ export async function fetchClips(
     } catch {
       // ignore body parse errors
     }
-    throw new ClipsFetchError(message, res.status, retryAfter);
+    throw new ClipsFetchError(message, res.status, retryAfter, source);
   }
   const body = await res.json();
   return { body, budget: readTwitchBudget(res.headers), status: res.status };
