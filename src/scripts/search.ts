@@ -7,7 +7,7 @@ import {
   applyFilters,
   renderClips,
 } from "./clips";
-import { fetchClips } from "./api";
+import { fetchClips, ClipsFetchError } from "./api";
 import { updateCategories } from "./categories";
 import { addRecent } from "./recent";
 import { loadCache, saveCache, clearCache } from "./cache";
@@ -118,13 +118,14 @@ function syncLoadAllBtn() {
   }
 }
 
-/** Paginate through one bounded time window. */
+/** Paginate through one bounded time window. Self-throttles when Twitch's
+ *  remaining-budget response header drops near zero. */
 async function fetchWindow(
   channel: string,
   range: string,
   win: TimeWindow,
   onProgress?: (n: number) => void,
-  pageDelay = 50,
+  pageDelay = 250,
 ): Promise<any[]> {
   const maxClips = parseInt(import.meta.env.PUBLIC_MAX_CLIPS || "50000", 10);
   const result: any[] = [];
@@ -132,15 +133,29 @@ async function fetchWindow(
 
   while (true) {
     let data: any;
+    let budget: { remaining: number | null; resetAt: number | null };
     try {
-      data = await fetchClips(
+      const res = await fetchClips(
         channel,
         range,
         cursor,
         win.startedAt,
         win.endedAt,
       );
-    } catch {
+      data = res.body;
+      budget = res.budget;
+    } catch (err) {
+      if (err instanceof ClipsFetchError) {
+        if (err.status === 429) {
+          const wait = (err.retryAfter ?? 5) * 1000;
+          terminalToast(
+            `Twitch rate limit hit, waiting ${Math.ceil(wait / 1000)}s…`,
+          );
+          await new Promise((r) => setTimeout(r, wait));
+          continue;
+        }
+        terminalToast(`Clips fetch failed: ${err.message}`);
+      }
       break;
     }
     if (!data || !data.clips || data.clips.length === 0) break;
@@ -150,7 +165,21 @@ async function fetchWindow(
     onProgress?.(result.length);
 
     if (!cursor || result.length >= maxClips) break;
-    await new Promise((r) => setTimeout(r, pageDelay));
+
+    // Self-throttle: stretch the inter-page delay when the Twitch budget
+    // is getting low so the parallel windows don't all hammer at once.
+    let delay = pageDelay;
+    if (budget.remaining != null) {
+      if (budget.remaining <= 20) delay = Math.max(delay, 2000);
+      else if (budget.remaining <= 100) delay = Math.max(delay, 750);
+    }
+    if (budget.resetAt != null) {
+      const msUntilReset = budget.resetAt - Date.now();
+      if (msUntilReset > 0 && msUntilReset < 60_000) {
+        delay = Math.max(delay, Math.min(msUntilReset + 500, 60_000));
+      }
+    }
+    await new Promise((r) => setTimeout(r, delay));
   }
 
   return result;
@@ -279,7 +308,7 @@ async function runLoadAllWindowPool(
   pendingWindows.length = 0;
 
   await asyncPool(
-    4,
+    2,
     windows,
     async (win) => {
       const batch = await fetchWindow(currentChannel, range, win);

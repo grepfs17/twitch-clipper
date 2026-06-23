@@ -11,6 +11,10 @@
     {
       "binding": "RATE_LIMIT_KV",
       "id": "e4aaac15dcee4a21bb6c895cd3ff9dc1"
+    },
+    {
+      "binding": "CLIP_CACHE_KV",
+      "id": "REPLACE_WITH_REAL_NAMESPACE_ID"
     }
   ]
 }
