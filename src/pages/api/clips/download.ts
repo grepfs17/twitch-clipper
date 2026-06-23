@@ -7,11 +7,12 @@ import {
 } from "../../../lib/twitch-gql";
 import { isSameOrigin, checkRateLimit } from "../../../lib/utils";
 
-// Allowed quality IDs that the formats endpoint can return. We validate
-// the input here rather than aliasing to a fixed set, so newly added
-// portrait heights (e.g. portrait-640, portrait-853) work without
-// needing a code change.
-const ALLOWED_QUALITY = /^(best|worst|360|480|720|1080|portrait-(360|480|640|720|853|1080))$/;
+// Validate the requested quality against the IDs the formats endpoint
+// can produce. The formats endpoint uses the actual `height` from
+// Twitch's GQL response, so portrait heights vary by clip (e.g. some
+// clips only have 1080/853/640, others have 1920/1280/853/640).
+// Allow any positive integer to avoid maintaining a fixed list.
+const ALLOWED_QUALITY = /^(best|worst|\d+|portrait-\d+)$/;
 
 function sanitizeFilename(name: string): string {
   return name
