@@ -57,3 +57,13 @@ export function terminalToast(message: string, durationMs = 3000): void {
     setTimeout(() => banner.remove(), 350);
   }, durationMs);
 }
+
+let lastRateLimitToast = 0;
+/** Debounced toast for rate-limit messages — collapses bursts of 429s
+ *  into a single visible message so the UI doesn't flash. */
+export function rateLimitToast(message: string): void {
+  const now = Date.now();
+  if (now - lastRateLimitToast < 1500) return;
+  lastRateLimitToast = now;
+  terminalToast(message, 2000);
+}

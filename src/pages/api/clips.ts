@@ -9,7 +9,6 @@ import {
 } from "../../lib/twitch";
 import {
   isSameOrigin,
-  checkRateLimit,
   checkTwitchBudget,
   writeTwitchBudget,
 } from "../../lib/utils";
@@ -66,21 +65,12 @@ function attachGameNames(clips: any[]): any[] {
 export const GET: APIRoute = async ({ request }: any) => {
   if (!isSameOrigin(request)) return json({ error: "Forbidden" }, 403);
 
-  const rateLimit = await checkRateLimit(request, env, {
-    maxRequests: 120,
-    windowSec: 60,
-    scope: new URL(request.url).pathname,
-  });
-  if (!rateLimit.allowed) {
-    return new Response(JSON.stringify({ error: "Too many requests" }), {
-      status: 429,
-      headers: {
-        "Content-Type": "application/json",
-        "Retry-After": String(rateLimit.retryAfter),
-        "X-RateLimit-Source": "kv",
-      },
-    });
-  }
+  // Skip the per-IP KV rate limit for /api/clips — the Twitch-budget
+  // gate below is the authoritative defense against Twitch's 800/min
+  // limit, and the per-IP limiter was rejecting legitimate "Load all
+  // clips" runs. We still rely on the Twitch-budget gate to shed load.
+  // (The KV limit is kept for the other endpoints where each call is
+  // user-initiated rather than part of a paginated burst.)
 
   const twitchBudget = await checkTwitchBudget(env);
   if (!twitchBudget.allowed) {

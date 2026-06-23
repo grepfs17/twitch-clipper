@@ -11,7 +11,7 @@ import { fetchClips, ClipsFetchError } from "./api";
 import { updateCategories } from "./categories";
 import { addRecent } from "./recent";
 import { loadCache, saveCache, clearCache } from "./cache";
-import { terminalConfirm, terminalToast } from "./notify";
+import { terminalConfirm, terminalToast, rateLimitToast } from "./notify";
 
 // Time window helpers
 
@@ -157,10 +157,12 @@ async function fetchWindow(
                 : err.source === "kv"
                   ? `Local rate limit hit, waiting ${Math.ceil(wait / 1000)}s…`
                   : `Rate limit hit, waiting ${Math.ceil(wait / 1000)}s…`;
-          terminalToast(message);
+          rateLimitToast(message);
           await new Promise((r) => setTimeout(r, wait));
           continue;
         }
+        // For non-429 errors, only show a toast once per window to avoid
+        // spamming the user during multi-page pagination.
         terminalToast(`Clips fetch failed: ${err.message}`);
       }
       break;
@@ -175,10 +177,14 @@ async function fetchWindow(
 
     // Self-throttle: stretch the inter-page delay when the Twitch budget
     // is getting low so the parallel windows don't all hammer at once.
+    // Use gentler thresholds than the server-side Twitch-budget gate
+    // (which sheds at remaining <= 20) so the client backs off before
+    // the server ever has to refuse the request.
     let delay = pageDelay;
     if (budget.remaining != null) {
-      if (budget.remaining <= 5) delay = Math.max(delay, 1500);
-      else if (budget.remaining <= 30) delay = Math.max(delay, 400);
+      if (budget.remaining <= 30) delay = Math.max(delay, 1500);
+      else if (budget.remaining <= 100) delay = Math.max(delay, 500);
+      else if (budget.remaining <= 200) delay = Math.max(delay, 250);
     }
     if (budget.resetAt != null) {
       const msUntilReset = budget.resetAt - Date.now();
