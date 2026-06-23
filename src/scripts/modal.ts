@@ -57,20 +57,17 @@ function onEmbedReady(cb: () => void) {
 }
 
 function initQualitySelector() {
-  if (
-    !elements.qualitySelectTrigger ||
-    !elements.qualitySelect ||
-    !elements.qualitySelectOptions
-  )
-    return;
+  const trigger = elements.qualitySelectTrigger;
+  const options = elements.qualitySelectOptions;
+  if (!elements.qualitySelect || !trigger || !options) return;
 
-  elements.qualitySelectTrigger.addEventListener("click", (e) => {
+  trigger.addEventListener("click", (e) => {
     e.stopPropagation();
-    const isOpen = elements.qualitySelectOptions.classList.contains("open");
+    const isOpen = options.classList.contains("open");
     closeAllSelects();
     if (!isOpen) {
-      elements.qualitySelectOptions.classList.add("open");
-      elements.qualitySelectTrigger.classList.add("open");
+      options.classList.add("open");
+      trigger.classList.add("open");
     }
   });
 }
@@ -518,13 +515,15 @@ export function initModal() {
   initQualitySelector();
 
   elements.modalNotes?.addEventListener("input", () => {
+    const notesEl = elements.modalNotes;
+    if (!notesEl) return;
     if (currentClipUrl) {
-      saveNote(currentClipUrl, elements.modalNotes.value);
+      saveNote(currentClipUrl, notesEl.value);
     }
     if (elements.modalNotesSection) {
       elements.modalNotesSection.classList.toggle(
         "has-notes",
-        !!elements.modalNotes.value.trim(),
+        !!notesEl.value.trim(),
       );
     }
   });

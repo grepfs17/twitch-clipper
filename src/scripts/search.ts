@@ -598,14 +598,15 @@ export function initSearch() {
   elements.sortFilter?.addEventListener("change", applyFilters);
 
   elements.filterSearchInput?.addEventListener("input", () => {
-    const hasText = !!elements.filterSearchInput.value;
+    const hasText = !!elements.filterSearchInput?.value;
     elements.filterSearchClear?.classList.toggle("hidden", !hasText);
     applyFilters();
   });
 
   elements.filterSearchClear?.addEventListener("click", () => {
+    if (!elements.filterSearchInput) return;
     elements.filterSearchInput.value = "";
-    elements.filterSearchClear.classList.add("hidden");
+    elements.filterSearchClear?.classList.add("hidden");
     elements.filterSearchInput.focus();
     applyFilters();
   });

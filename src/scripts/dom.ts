@@ -1,71 +1,140 @@
-export const elements = {
-  channelInput: document.getElementById("channelInput") as HTMLInputElement,
-  searchBtn: document.getElementById("searchBtn"),
-  resultsSection: document.getElementById("resultsSection"),
-  clipsGrid: document.getElementById("clipsGrid"),
-  rangeFilter: document.getElementById("rangeFilter") as HTMLInputElement,
-  categoryFilter: document.getElementById("categoryFilter") as HTMLInputElement,
-  categoryInput: document.getElementById("categoryInput") as HTMLInputElement,
-  categoryList: document.getElementById("categoryList") as HTMLUListElement,
-  categoryClear: document.getElementById("categoryClear") as HTMLButtonElement,
-  filterSearchInput: document.getElementById(
-    "filterSearchInput",
-  ) as HTMLInputElement,
-  filterSearchClear: document.getElementById(
-    "filterSearchClear",
-  ) as HTMLButtonElement,
-  sortFilter: document.getElementById("sortFilter") as HTMLInputElement,
-  clipsCount: document.getElementById("clipsCount"),
-  loader: document.getElementById("loader"),
-  loaderText: document.getElementById("loaderText"),
-  emptyState: document.getElementById("emptyState"),
-  recentSearches: document.getElementById("recentSearches"),
-  recentList: document.getElementById("recentList") as HTMLUListElement,
-  loadOlderBtn: document.getElementById("loadOlderBtn") as HTMLButtonElement,
+type ElementMap = {
+  channelInput: HTMLInputElement | null;
+  searchBtn: HTMLElement | null;
+  resultsSection: HTMLElement | null;
+  clipsGrid: HTMLElement | null;
+  rangeFilter: HTMLInputElement | null;
+  categoryFilter: HTMLInputElement | null;
+  categoryInput: HTMLInputElement | null;
+  categoryList: HTMLUListElement | null;
+  categoryClear: HTMLButtonElement | null;
+  filterSearchInput: HTMLInputElement | null;
+  filterSearchClear: HTMLButtonElement | null;
+  sortFilter: HTMLInputElement | null;
+  clipsCount: HTMLElement | null;
+  loader: HTMLElement | null;
+  loaderText: HTMLElement | null;
+  emptyState: HTMLElement | null;
+  recentSearches: HTMLElement | null;
+  recentList: HTMLUListElement | null;
+  loadOlderBtn: HTMLButtonElement | null;
 
-  modal: document.getElementById("clipModal"),
-  modalTitle: document.getElementById("modalTitle"),
-  modalCreator: document.getElementById("modalCreator"),
-  modalGame: document.getElementById("modalGame"),
-  modalDate: document.getElementById("modalDate"),
-  modalIframe: document.getElementById("modalIframe") as HTMLIFrameElement,
-  modalSpinner: document.getElementById("modalSpinner"),
-  modalCloseBtn: document.getElementById("modalCloseBtn"),
-  modalCopyBtn: document.getElementById("modalCopyBtn") as HTMLButtonElement,
-  modalOpenBtn: document.getElementById("modalOpenBtn") as HTMLAnchorElement,
-  modalFavBtn: document.getElementById("modalFavBtn") as HTMLButtonElement,
-  modalDownloadBtn: document.getElementById(
-    "modalDownloadBtn",
-  ) as HTMLButtonElement,
-  qualitySelectTrigger: document.getElementById(
-    "qualitySelectTrigger",
-  ) as HTMLButtonElement,
-  qualitySelect: document.getElementById("qualitySelect") as HTMLInputElement,
-  qualitySelectOptions: document.getElementById(
-    "qualitySelectOptions",
-  ) as HTMLUListElement,
-  downloadProgress: document.getElementById(
-    "downloadProgress",
-  ) as HTMLDivElement,
-  downloadProgressFill: document.getElementById(
-    "downloadProgressFill",
-  ) as HTMLDivElement,
-  downloadProgressText: document.getElementById(
-    "downloadProgressText",
-  ) as HTMLSpanElement,
+  modal: HTMLElement | null;
+  modalTitle: HTMLElement | null;
+  modalCreator: HTMLElement | null;
+  modalGame: HTMLElement | null;
+  modalDate: HTMLElement | null;
+  modalIframe: HTMLIFrameElement | null;
+  modalSpinner: HTMLElement | null;
+  modalCloseBtn: HTMLElement | null;
+  modalCopyBtn: HTMLButtonElement | null;
+  modalOpenBtn: HTMLAnchorElement | null;
+  modalFavBtn: HTMLButtonElement | null;
+  modalDownloadBtn: HTMLButtonElement | null;
+  qualitySelectTrigger: HTMLButtonElement | null;
+  qualitySelect: HTMLInputElement | null;
+  qualitySelectOptions: HTMLUListElement | null;
+  downloadProgress: HTMLDivElement | null;
+  downloadProgressFill: HTMLDivElement | null;
+  downloadProgressText: HTMLSpanElement | null;
 
-  cacheIndicator: document.getElementById("cacheIndicator"),
-  cacheText: document.getElementById("cacheText") as HTMLSpanElement,
-  cacheRefresh: document.getElementById("cacheRefresh") as HTMLButtonElement,
+  cacheIndicator: HTMLElement | null;
+  cacheText: HTMLSpanElement | null;
+  cacheRefresh: HTMLButtonElement | null;
 
-  favoritesModal: document.getElementById("favoritesModal"),
-  favoritesBtn: document.getElementById("favoritesBtn") as HTMLButtonElement,
-  favoritesCloseBtn: document.getElementById("favoritesCloseBtn"),
-  favoritesGrid: document.getElementById("favoritesGrid"),
-  favoritesCount: document.getElementById("favoritesCount"),
-  favoritesEmpty: document.getElementById("favoritesEmpty"),
+  favoritesModal: HTMLElement | null;
+  favoritesBtn: HTMLButtonElement | null;
+  favoritesCloseBtn: HTMLElement | null;
+  favoritesGrid: HTMLElement | null;
+  favoritesCount: HTMLElement | null;
+  favoritesEmpty: HTMLElement | null;
 
-  modalNotes: document.getElementById("modalNotes") as HTMLTextAreaElement,
-  modalNotesSection: document.getElementById("modalNotesSection"),
-  modalNotesToggle: document.getElementById("modalNotesToggle"),
+  modalNotes: HTMLTextAreaElement | null;
+  modalNotesSection: HTMLElement | null;
+  modalNotesToggle: HTMLElement | null;
 };
+
+const IDS: { [K in keyof ElementMap]: string } = {
+  channelInput: "channelInput",
+  searchBtn: "searchBtn",
+  resultsSection: "resultsSection",
+  clipsGrid: "clipsGrid",
+  rangeFilter: "rangeFilter",
+  categoryFilter: "categoryFilter",
+  categoryInput: "categoryInput",
+  categoryList: "categoryList",
+  categoryClear: "categoryClear",
+  filterSearchInput: "filterSearchInput",
+  filterSearchClear: "filterSearchClear",
+  sortFilter: "sortFilter",
+  clipsCount: "clipsCount",
+  loader: "loader",
+  loaderText: "loaderText",
+  emptyState: "emptyState",
+  recentSearches: "recentSearches",
+  recentList: "recentList",
+  loadOlderBtn: "loadOlderBtn",
+
+  modal: "clipModal",
+  modalTitle: "modalTitle",
+  modalCreator: "modalCreator",
+  modalGame: "modalGame",
+  modalDate: "modalDate",
+  modalIframe: "modalIframe",
+  modalSpinner: "modalSpinner",
+  modalCloseBtn: "modalCloseBtn",
+  modalCopyBtn: "modalCopyBtn",
+  modalOpenBtn: "modalOpenBtn",
+  modalFavBtn: "modalFavBtn",
+  modalDownloadBtn: "modalDownloadBtn",
+  qualitySelectTrigger: "qualitySelectTrigger",
+  qualitySelect: "qualitySelect",
+  qualitySelectOptions: "qualitySelectOptions",
+  downloadProgress: "downloadProgress",
+  downloadProgressFill: "downloadProgressFill",
+  downloadProgressText: "downloadProgressText",
+
+  cacheIndicator: "cacheIndicator",
+  cacheText: "cacheText",
+  cacheRefresh: "cacheRefresh",
+
+  favoritesModal: "favoritesModal",
+  favoritesBtn: "favoritesBtn",
+  favoritesCloseBtn: "favoritesCloseBtn",
+  favoritesGrid: "favoritesGrid",
+  favoritesCount: "favoritesCount",
+  favoritesEmpty: "favoritesEmpty",
+
+  modalNotes: "modalNotes",
+  modalNotesSection: "modalNotesSection",
+  modalNotesToggle: "modalNotesToggle",
+};
+
+let _cache: ElementMap | null = null;
+
+function buildElements(): ElementMap {
+  const out = {} as ElementMap;
+  (Object.keys(IDS) as (keyof ElementMap)[]).forEach((key) => {
+    out[key] = document.getElementById(IDS[key]) as never;
+  });
+  return out;
+}
+
+export function getElements(): ElementMap {
+  if (!_cache) _cache = buildElements();
+  return _cache;
+}
+
+export function resetElements(): void {
+  _cache = null;
+}
+
+export function getElement<T extends HTMLElement>(id: string): T | null {
+  return document.getElementById(id) as T | null;
+}
+
+export const elements: ElementMap = new Proxy({} as ElementMap, {
+  get(_target, prop: string) {
+    return getElements()[prop as keyof ElementMap];
+  },
+});

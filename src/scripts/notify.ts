@@ -32,8 +32,11 @@ export function terminalConfirm(
     noBtn.className = "notify-no";
     noBtn.textContent = `[${noText}]`;
 
-    actions.append(yesBtn, noBtn);
-    banner.append(prompt, msg, actions);
+    actions.appendChild(yesBtn);
+    actions.appendChild(noBtn);
+    banner.appendChild(prompt);
+    banner.appendChild(msg);
+    banner.appendChild(actions);
     document.body.appendChild(banner);
 
     // Animate in on next frame
@@ -65,7 +68,8 @@ export function terminalToast(message: string, durationMs = 3000): void {
   msg.className = "notify-msg";
   msg.textContent = message;
 
-  banner.append(prompt, msg);
+  banner.appendChild(prompt);
+  banner.appendChild(msg);
   document.body.appendChild(banner);
   requestAnimationFrame(() => banner.classList.add("notify-visible"));
   setTimeout(() => {
