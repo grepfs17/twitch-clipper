@@ -1,8 +1,8 @@
-/* ╔══════════════════════════════════════════════════╗
+﻿/* ╔══════════════════════════════════════════════════╗
    ║  TWITCH CLIP EXPLORER — AMBER PHOSPHOR TERMINAL  ║
    ╚══════════════════════════════════════════════════╝ */
 
-/* ── Keyframes ──────────────────────────────────────── */
+/* Keyframes */
 
 @keyframes boot-flicker {
     0% {
@@ -76,7 +76,7 @@
     }
 }
 
-/* ── Layout shell ───────────────────────────────────── */
+/* Layout shell */
 
 main {
     min-height: 100vh;
@@ -85,7 +85,7 @@ main {
     animation: boot-flicker 0.7s ease-out;
 }
 
-/* ── Main content area ──────────────────────────────── */
+/* Main content area */
 
 .main-content {
     flex: 1;
@@ -95,7 +95,7 @@ main {
     min-height: 100vh;
 }
 
-/* ── Hero / header ──────────────────────────────────── */
+/* Hero / header */
 
 .hero {
     padding: 2.5rem 0 2rem;
@@ -169,7 +169,7 @@ h1 .cursor {
     animation: blink-cursor 1s step-end infinite;
 }
 
-/* ── Search area ────────────────────────────────────── */
+/* Search area */
 
 .search-wrapper {
     max-width: 580px;
@@ -285,7 +285,7 @@ input[type="text"]#channelInput::placeholder {
     color: var(--amber);
 }
 
-/* ── Recent searches ────────────────────────────────── */
+/* Recent searches */
 
 .recent-searches {
     max-width: 580px;
@@ -370,7 +370,7 @@ input[type="text"]#channelInput::placeholder {
     background: rgba(255, 176, 0, 0.05);
 }
 
-/* ── Results section ────────────────────────────────── */
+/* Results section */
 
 .results-section {
     flex: 1;
@@ -379,7 +379,7 @@ input[type="text"]#channelInput::placeholder {
     animation: fadeIn 0.3s ease;
 }
 
-/* ── Toolbar ────────────────────────────────────────── */
+/* Toolbar */
 
 .toolbar {
     display: flex;
@@ -437,7 +437,7 @@ input[type="text"]#channelInput::placeholder {
     font-family: var(--font-mono);
 }
 
-/* ── Clip URL bar ──────────────────────────────────── */
+/* Clip URL bar */
 
 .clip-url-bar {
     width: 100%;
@@ -481,7 +481,7 @@ input[type="text"]#channelInput::placeholder {
     opacity: 0.5;
 }
 
-/* ── Custom select ──────────────────────────────────── */
+/* Custom select */
 
 .custom-select {
     position: relative;
@@ -592,7 +592,7 @@ input[type="text"]#channelInput::placeholder {
     color: var(--text-bright);
 }
 
-/* ── Autocomplete ───────────────────────────────────── */
+/* Autocomplete */
 
 .autocomplete-wrapper {
     position: relative;
@@ -765,7 +765,7 @@ input[type="text"]#channelInput::placeholder {
     color: var(--text-bright);
 }
 
-/* ── Stats ──────────────────────────────────────────── */
+/* Stats */
 
 .stats {
     display: flex;
@@ -808,7 +808,7 @@ input[type="text"]#channelInput::placeholder {
     background: none;
 }
 
-/* ── Clip grid ──────────────────────────────────────── */
+/* Clip grid */
 
 .clips-grid {
     display: grid;
@@ -816,7 +816,7 @@ input[type="text"]#channelInput::placeholder {
     gap: 1.25rem;
 }
 
-/* ── Cache indicator ────────────────────────────────── */
+/* Cache indicator */
 
 .cache-indicator {
     display: flex;
@@ -866,7 +866,7 @@ input[type="text"]#channelInput::placeholder {
     display: none !important;
 }
 
-/* ── Loader ─────────────────────────────────────────── */
+/* Loader */
 
 .loader {
     display: flex;
@@ -897,7 +897,7 @@ input[type="text"]#channelInput::placeholder {
     letter-spacing: 0.1em;
 }
 
-/* ── Progress bar (fixed bottom) ───────────────────── */
+/* Progress bar (fixed bottom) */
 
 .progress-area {
     position: fixed;
@@ -948,7 +948,7 @@ input[type="text"]#channelInput::placeholder {
     letter-spacing: 0.08em;
 }
 
-/* ── Empty state ────────────────────────────────────── */
+/* Empty state */
 
 .empty-state {
     text-align: center;
@@ -978,7 +978,30 @@ input[type="text"]#channelInput::placeholder {
     color: var(--amber-dim);
 }
 
-/* ── Footer ─────────────────────────────────────────── */
+/* GitHub Link */
+
+.github-link {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.75rem;
+    border: 1px solid var(--border);
+    background: var(--bg-2);
+    color: var(--text-dim);
+    font-size: 0.75rem;
+    transition: color 0.2s, border-color 0.2s;
+}
+
+.github-link:hover {
+    color: var(--amber);
+    border-color: var(--amber-dim);
+}
+
+/* Footer */
 
 .footer {
     margin-top: auto;
@@ -992,7 +1015,7 @@ input[type="text"]#channelInput::placeholder {
     position: relative;
 }
 
-/* ── Clip cards ─────────────────────────────────────── */
+/* Clip cards */
 
 .clip-card {
     background: var(--bg-2);
@@ -1175,7 +1198,7 @@ input[type="text"]#channelInput::placeholder {
     flex-shrink: 0;
 }
 
-/* ── Notify banner ─────────────────────────────────────── */
+/* Notify banner */
 
 .notify-banner {
     position: fixed;
@@ -1263,7 +1286,7 @@ input[type="text"]#channelInput::placeholder {
     display: none;
 }
 
-/* ── Modal ──────────────────────────────────────────── */
+/* Modal */
 
 .modal-overlay {
     position: fixed;
@@ -1467,7 +1490,7 @@ input[type="text"]#channelInput::placeholder {
     color: var(--amber);
 }
 
-/* ── Modal notes ──────────────────────────────────── */
+/* Modal notes */
 
 .modal-notes {
     margin-top: 0.85rem;
@@ -1541,7 +1564,7 @@ input[type="text"]#channelInput::placeholder {
     opacity: 0.5;
 }
 
-/* ── Modal actions ──────────────────────────────────── */
+/* Modal actions */
 
 .modal-actions {
     display: flex;
@@ -1659,7 +1682,7 @@ input[type="text"]#channelInput::placeholder {
 
 /* Responsive */
 
-/* ── Favorite button on clip cards ─────────────────── */
+/* Favorite button on clip cards */
 
 .fav-btn {
     position: absolute;
@@ -1698,7 +1721,7 @@ input[type="text"]#channelInput::placeholder {
     transition: fill 0.15s;
 }
 
-/* ── Favorites open button ──────────────────────────── */
+/* Favorites open button */
 
 .favorites-open-btn {
     display: inline-flex;
@@ -1727,7 +1750,7 @@ input[type="text"]#channelInput::placeholder {
     flex-shrink: 0;
 }
 
-/* ── Favorites modal ────────────────────────────────── */
+/* Favorites modal */
 
 .fav-modal-content {
     background: var(--bg);
@@ -1769,7 +1792,7 @@ input[type="text"]#channelInput::placeholder {
     gap: 0.25rem;
 }
 
-/* ── Tree: channel node ──────────── */
+/* Tree: channel node */
 
 .fav-channel {
     display: flex;
@@ -1826,7 +1849,7 @@ input[type="text"]#channelInput::placeholder {
     color: var(--text-dim);
 }
 
-/* ── Tree: game node ──────────── */
+/* Tree: game node */
 
 .fav-game {
     display: flex;
@@ -1881,7 +1904,7 @@ input[type="text"]#channelInput::placeholder {
     color: var(--text-dim);
 }
 
-/* ── Tree: chevron ──────────── */
+/* Tree: chevron */
 
 .fav-chevron {
     font-size: 0.6rem;
@@ -1897,7 +1920,7 @@ input[type="text"]#channelInput::placeholder {
     transform: rotate(90deg);
 }
 
-/* ── Tree: clip leaf ──────────── */
+/* Tree: clip leaf */
 
 .fav-clip {
     display: flex;
@@ -1931,7 +1954,7 @@ input[type="text"]#channelInput::placeholder {
     color: var(--text);
 }
 
-/* ── Tree: clip thumbnail ──────────── */
+/* Tree: clip thumbnail */
 
 .fav-clip-thumb {
     width: 120px;
@@ -1946,7 +1969,7 @@ input[type="text"]#channelInput::placeholder {
     border-color: var(--amber-dim);
 }
 
-/* ── Tree: remove button ──────────── */
+/* Tree: remove button */
 
 .fav-remove {
     background: none;
@@ -1976,7 +1999,7 @@ input[type="text"]#channelInput::placeholder {
     background: var(--amber-dark);
 }
 
-/* ── Favorites empty ──────────── */
+/* Favorites empty */
 
 .favorites-empty {
     text-align: center;

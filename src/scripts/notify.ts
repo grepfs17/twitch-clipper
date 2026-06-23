@@ -1,4 +1,4 @@
-// ── Non-blocking terminal-style confirm banner ────────────────────────────────
+﻿// Non-blocking terminal-style confirm banner 
 // Returns a Promise<boolean> — resolves when user clicks Yes or No.
 
 export function terminalConfirm(

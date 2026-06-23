@@ -1,4 +1,4 @@
-// ── IndexedDB cache for full clip libraries ───────────────────────────────────
+﻿// IndexedDB cache for full clip libraries 
 
 const DB_NAME = "twitch-clip-explorer";
 const STORE = "channels";
