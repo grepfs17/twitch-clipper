@@ -4,6 +4,7 @@ import {
   getClipMetadata,
   jsonError,
 } from "../../../lib/twitch-gql";
+import { isSameOrigin } from "../../../lib/utils";
 
 interface FormatOption {
   id: string;
@@ -72,6 +73,8 @@ function extractFormats(clipMeta: any): FormatOption[] {
 }
 
 export const GET: APIRoute = async ({ request }: { request: Request }) => {
+  if (!isSameOrigin(request)) return jsonError("Forbidden", 403);
+
   const params = new URL(request.url).searchParams;
   const clipUrl = params.get("url");
 

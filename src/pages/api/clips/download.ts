@@ -4,6 +4,7 @@ import {
   getClipMetadata,
   jsonError,
 } from "../../../lib/twitch-gql";
+import { isSameOrigin } from "../../../lib/utils";
 
 const QUALITY_TO_FORMAT: Record<string, string> = {
   best: "best",
@@ -82,6 +83,8 @@ function findFormatUrl(clipMeta: any, quality: string): string | null {
 }
 
 export const GET: APIRoute = async ({ request }: { request: Request }) => {
+  if (!isSameOrigin(request)) return jsonError("Forbidden", 403);
+
   const params = new URL(request.url).searchParams;
   const clipUrl = params.get("url");
   const clipTitle = params.get("title") || "";

@@ -5,6 +5,7 @@ import {
   getClips,
   getGames,
 } from "../../lib/twitch";
+import { isSameOrigin } from "../../lib/utils";
 
 const gameNameCache = new Map<string, string>();
 
@@ -42,6 +43,8 @@ function attachGameNames(clips: any[]): any[] {
 }
 
 export const GET: APIRoute = async ({ request }: { request: Request }) => {
+  if (!isSameOrigin(request)) return json({ error: "Forbidden" }, 403);
+
   const params = new URL(request.url).searchParams;
   const channel = params.get("channel");
   const timeRange = params.get("timeRange") || "all";

@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { TWITCH_CLIENT_ID } from "astro:env/server";
 import { getAccessToken, getGames } from "../../../lib/twitch";
+import { isSameOrigin } from "../../../lib/utils";
 
 const CLIP_SLUG_REGEX = /(?:clips\.twitch\.tv\/|clip\/)([\w-]+)/i;
 
@@ -26,6 +27,8 @@ async function hydrateGameName(clip: any, token: string) {
 }
 
 export const GET: APIRoute = async ({ request }: { request: Request }) => {
+  if (!isSameOrigin(request)) return json({ error: "Forbidden" }, 403);
+
   const clipUrl = new URL(request.url).searchParams.get("url");
 
   if (!clipUrl) return json({ error: "Clip URL is required" }, 400);
