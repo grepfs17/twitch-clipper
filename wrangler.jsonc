@@ -1,0 +1,10 @@
+{
+  "main": "@astrojs/cloudflare/entrypoints/server",
+  "name": "twitch-clipper",
+  "compatibility_date": "2025-06-23",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "./dist"
+  }
+}
