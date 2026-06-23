@@ -1,9 +1,10 @@
 import { elements } from "./dom";
 import { openClipModal } from "./modal";
 import { toggleFavorite, isFavorite, escapeHtml } from "./favorites";
+import type { TwitchClip } from "./types";
 
-export let allClips: any[] = [];
-let displayedClips: any[] = [];
+export let allClips: TwitchClip[] = [];
+let displayedClips: TwitchClip[] = [];
 const clipIds = new Set<string>();
 
 const BATCH_SIZE = 50;
@@ -11,22 +12,22 @@ let renderIndex = 0;
 let sentinel: HTMLDivElement | null = null;
 let observer: IntersectionObserver | null = null;
 
-export function setAllClips(val: any[]) {
+export function setAllClips(val: TwitchClip[]) {
   allClips = val;
   clipIds.clear();
   for (const c of val) clipIds.add(c.id);
 }
-export function setDisplayedClips(val: any[]) {
+export function setDisplayedClips(val: TwitchClip[]) {
   displayedClips = val;
 }
 
-export function appendClips(newClips: any[]) {
+export function appendClips(newClips: TwitchClip[]) {
   const unique = newClips.filter((c) => !clipIds.has(c.id));
   for (const c of unique) clipIds.add(c.id);
   allClips.push(...unique);
 }
 
-function buildClipCard(clip: any): HTMLDivElement {
+function buildClipCard(clip: TwitchClip): HTMLDivElement {
   const date = new Date(clip.created_at).toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
@@ -167,11 +168,11 @@ export function applyFilters() {
   renderClips();
 }
 
-function filterByCategory(clips: any[], category: string): any[] {
+function filterByCategory(clips: TwitchClip[], category: string): TwitchClip[] {
   return clips.filter((c) => c.game_name === category);
 }
 
-function filterBySearch(clips: any[], searchText: string): any[] {
+function filterBySearch(clips: TwitchClip[], searchText: string): TwitchClip[] {
   return clips.filter(
     (c) =>
       c.title?.toLowerCase().includes(searchText) ||
@@ -180,7 +181,7 @@ function filterBySearch(clips: any[], searchText: string): any[] {
   );
 }
 
-const SORT_COMPARATORS: Record<string, (a: any, b: any) => number> = {
+const SORT_COMPARATORS: Record<string, (a: TwitchClip, b: TwitchClip) => number> = {
   views: (a, b) => b.view_count - a.view_count,
   latest: (a, b) =>
     new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
@@ -188,7 +189,7 @@ const SORT_COMPARATORS: Record<string, (a: any, b: any) => number> = {
     new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
 };
 
-function sortClips(clips: any[], sortBy: string): any[] {
+function sortClips(clips: TwitchClip[], sortBy: string): TwitchClip[] {
   const cmp = SORT_COMPARATORS[sortBy];
   return cmp ? [...clips].sort(cmp) : clips;
 }

@@ -1,4 +1,10 @@
 import { openClipModal } from "./modal";
+import type { TwitchClip } from "./types";
+
+interface ClipLookupResponse {
+  clip?: TwitchClip;
+  error?: string;
+}
 
 async function openClipFromUrl(clipUrl: string) {
   const btn = document.getElementById("clipUrlBtn") as HTMLButtonElement;
@@ -9,13 +15,12 @@ async function openClipFromUrl(clipUrl: string) {
     const res = await fetch(
       `/api/clips/lookup?url=${encodeURIComponent(clipUrl)}`,
     );
+    const data: ClipLookupResponse = await res.json();
     if (!res.ok) {
-      const err = await res.json();
-      alert(err.error || "Failed to load clip");
+      alert(data.error || "Failed to load clip");
       return;
     }
-    const data = await res.json();
-    openClipModal(data.clip);
+    if (data.clip) openClipModal(data.clip);
   } catch {
     alert("Failed to load clip");
   } finally {

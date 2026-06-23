@@ -39,9 +39,9 @@ describe("categories", () => {
     } as any;
 
     vi.mocked(clips.allClips).push(
-      { game_name: "Valorant" },
-      { game_name: "Minecraft" },
-      { game_name: "Valorant" },
+      { game_name: "Valorant" } as any,
+      { game_name: "Minecraft" } as any,
+      { game_name: "Valorant" } as any,
     );
 
     const { updateCategories } = await import("../categories");
@@ -66,7 +66,7 @@ describe("categories", () => {
       classList: { remove: vi.fn(), add: vi.fn() },
     } as any;
 
-    vi.mocked(clips.allClips).push({ game_name: "Minecraft" });
+    vi.mocked(clips.allClips).push({ game_name: "Minecraft" } as any);
     elements.categoryFilter!.value = "Minecraft";
 
     const { updateCategories } = await import("../categories");

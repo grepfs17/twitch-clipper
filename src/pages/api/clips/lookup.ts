@@ -3,6 +3,7 @@ import { env } from "cloudflare:workers";
 import { TWITCH_CLIENT_ID } from "astro:env/server";
 import { getAccessToken, getGames } from "../../../lib/twitch";
 import { isSameOrigin, checkRateLimit } from "../../../lib/utils";
+import type { TwitchClip } from "../../../scripts/types";
 
 const CLIP_SLUG_REGEX = /(?:clips\.twitch\.tv\/|clip\/)([\w-]+)/i;
 
@@ -17,7 +18,7 @@ function json(body: unknown, status: number) {
   });
 }
 
-async function hydrateGameName(clip: any, token: string) {
+async function hydrateGameName(clip: TwitchClip, token: string) {
   if (!clip.game_id) {
     clip.game_name = "No Category";
     return;
@@ -68,10 +69,10 @@ export const GET: APIRoute = async ({ request }: any) => {
 
     if (!response.ok) return json({ error: "Clip not found" }, 404);
 
-    const data = await response.json();
+    const data = await response.json() as { data: TwitchClip[] };
     if (data.data.length === 0) return json({ error: "Clip not found" }, 404);
 
-    const clip = data.data[0];
+    const clip: TwitchClip = data.data[0];
     await hydrateGameName(clip, token);
 
     return json({ clip }, 200);

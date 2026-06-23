@@ -16,10 +16,8 @@ export class ClipsFetchError extends Error {
   }
 }
 
-export interface TwitchBudget {
-  remaining: number | null;
-  resetAt: number | null;
-}
+export type { TwitchBudget } from "./types";
+import type { TwitchBudget, TwitchClipsResponse } from "./types";
 
 export function readTwitchBudget(headers: Headers): TwitchBudget {
   const remaining = headers.get("X-Twitch-Ratelimit-Remaining");
@@ -36,7 +34,7 @@ export async function fetchClips(
   after = "",
   startedAt?: string,
   endedAt?: string,
-): Promise<{ body: any; budget: TwitchBudget; status: number }> {
+): Promise<{ body: TwitchClipsResponse; budget: TwitchBudget; status: number }> {
   let url = `/api/clips?channel=${encodeURIComponent(channel)}&timeRange=${timeRange}&after=${after}`;
   if (startedAt) url += `&startedAt=${encodeURIComponent(startedAt)}`;
   if (endedAt) url += `&endedAt=${encodeURIComponent(endedAt)}`;
@@ -60,6 +58,6 @@ export async function fetchClips(
     }
     throw new ClipsFetchError(message, res.status, retryAfter, source);
   }
-  const body = await res.json();
+  const body = (await res.json()) as TwitchClipsResponse;
   return { body, budget: readTwitchBudget(res.headers), status: res.status };
 }

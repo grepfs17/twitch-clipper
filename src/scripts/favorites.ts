@@ -1,4 +1,5 @@
 import { elements } from "./dom";
+import type { TwitchClip } from "./types";
 
 const STORAGE_KEY = "tc-favorites";
 
@@ -137,7 +138,7 @@ async function handleFavClipClick(target: HTMLElement): Promise<boolean> {
   if (!clipUrl) return true;
   try {
     const r = await fetch(`/api/clips/lookup?url=${encodeURIComponent(clipUrl)}`);
-    const data = await r.json();
+    const data: { clip?: TwitchClip } = await r.json();
     if (data.clip) {
       window.dispatchEvent(
         new CustomEvent("fav:openClip", { detail: data.clip }),

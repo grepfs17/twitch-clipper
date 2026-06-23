@@ -1,6 +1,7 @@
 import { elements } from "./dom";
 import { isFavorite, toggleFavorite, type FavoriteClip } from "./favorites";
 import { getNote, saveNote } from "./notes";
+import type { TwitchClip } from "./types";
 
 let currentClipUrl = "";
 let currentClipMeta: FavoriteClip | null = null;
@@ -84,7 +85,7 @@ function storeClipUrl(url: string) {
   updateModalFavBtn();
 }
 
-export function openClipModal(clip: any) {
+export function openClipModal(clip: TwitchClip) {
   if (!modalElementsReady()) return;
 
   currentClipMeta = buildClipMeta(clip);
@@ -107,7 +108,7 @@ function modalElementsReady(): boolean {
   );
 }
 
-function buildClipMeta(clip: any) {
+function buildClipMeta(clip: TwitchClip): FavoriteClip {
   return {
     url: clip.url,
     channel: clip.broadcaster_name,
@@ -125,7 +126,7 @@ function formatClipDate(iso: string): string {
   });
 }
 
-function populateModalContent(clip: any, date: string) {
+function populateModalContent(clip: TwitchClip, date: string) {
   elements.modalTitle!.textContent = clip.title;
   if (elements.modalCreator)
     elements.modalCreator.textContent = clip.creator_name;
@@ -141,7 +142,7 @@ function setModalNotesSection(clipUrl: string) {
   if (elements.modalNotes) elements.modalNotes.value = getNote(clipUrl);
 }
 
-function showModalAndIframe(clip: any) {
+function showModalAndIframe(clip: TwitchClip) {
   elements.modal!.classList.remove("hidden");
   if (
     elements.favoritesModal &&
@@ -200,7 +201,7 @@ async function fetchAndPopulateFormats(clipUrl: string) {
         console.warn("Qualities fetch failed:", res.status);
         return;
       }
-      const data = await res.json();
+      const data: { options?: FormatOption[] } = await res.json();
       if (data.options?.length) {
         populateQualityOptions(data.options);
       }

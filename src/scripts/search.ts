@@ -12,6 +12,7 @@ import { updateCategories, selectCategory } from "./categories";
 import { addRecent } from "./recent";
 import { loadCache, saveCache, clearCache } from "./cache";
 import { terminalConfirm, terminalToast, rateLimitToast } from "./notify";
+import type { TwitchClip, TwitchClipsResponse, TwitchBudget } from "./types";
 
 // Time window helpers
 
@@ -127,16 +128,16 @@ async function fetchWindow(
   onProgress?: (n: number) => void,
   pageDelay = 100,
   pageCap: number | null = null,
-): Promise<{ clips: any[]; failed: boolean; reason?: string }> {
+): Promise<{ clips: TwitchClip[]; failed: boolean; reason?: string }> {
   const maxClips = pageCap ?? parseInt(import.meta.env.PUBLIC_MAX_CLIPS || "50000", 10);
-  const result: any[] = [];
+  const result: TwitchClip[] = [];
   let cursor = "";
   let failed = false;
   let failReason: string | undefined;
 
   while (true) {
-    let data: any;
-    let budget: { remaining: number | null; resetAt: number | null };
+    let data: TwitchClipsResponse;
+    let budget: TwitchBudget;
     try {
       const res = await fetchClips(
         channel,
@@ -214,7 +215,7 @@ async function fetchTopClips(
   channel: string,
   onProgress?: (n: number) => void,
   pageCap: number | null = null,
-): Promise<{ clips: any[]; failed: boolean; reason?: string }> {
+): Promise<{ clips: TwitchClip[]; failed: boolean; reason?: string }> {
   return fetchWindow(
     channel,
     "all",
@@ -267,7 +268,7 @@ async function loadAllClips() {
   const RETRY_COOLDOWN_MS = 15_000;
 
   let attempt = 0;
-  let totalNewClips: any[] = [];
+  let totalNewClips: TwitchClip[] = [];
   let lastFailedCount = 0;
 
   while (true) {
@@ -347,8 +348,8 @@ function getLoadAllProgressElements(): LoadAllProgressEls {
 async function runLoadAllWindowPool(
   range: string,
   els: LoadAllProgressEls,
-): Promise<{ clips: any[]; failedWindows: TimeWindow[] }> {
-  const backgroundClips: any[] = [];
+): Promise<{ clips: TwitchClip[]; failedWindows: TimeWindow[] }> {
+  const backgroundClips: TwitchClip[] = [];
   const failedWindows: TimeWindow[] = [];
   const totalClipsBefore = allClips.length;
   const totalWindows = pendingWindows.length;
@@ -399,7 +400,7 @@ async function runLoadAllWindowPool(
 }
 
 function finalizeLoadAll(
-  totalNewClips: any[],
+  totalNewClips: TwitchClip[],
   lastFailedCount: number,
   remainingPending: number,
   els: LoadAllProgressEls,
@@ -535,7 +536,7 @@ async function loadFromCacheIfPresent(channel: string): Promise<boolean> {
 async function fetchInitialBatch(
   channel: string,
   range: string,
-): Promise<{ firstBatch: any[]; queuedWindows: TimeWindow[] }> {
+): Promise<{ firstBatch: TwitchClip[]; queuedWindows: TimeWindow[] }> {
   // Cap the initial render to 1 page (100 clips) for a snappy first
   // paint. The remaining windows stay queued behind the "Load all
   // clips" button. The cached path skips this entirely.
@@ -573,7 +574,7 @@ async function fetchInitialBatch(
   return { firstBatch, queuedWindows: windows.slice(1) };
 }
 
-function applySearchResults(channel: string, firstBatch: any[]) {
+function applySearchResults(channel: string, firstBatch: TwitchClip[]) {
   if (firstBatch.length > 0) {
     addRecent(channel);
     setAllClips(firstBatch);

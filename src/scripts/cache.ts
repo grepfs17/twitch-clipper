@@ -1,4 +1,6 @@
-﻿// IndexedDB cache for full clip libraries 
+﻿// IndexedDB cache for full clip libraries
+
+import type { TwitchClip } from "./types";
 
 const DB_NAME = "twitch-clip-explorer";
 const STORE = "channels";
@@ -6,7 +8,7 @@ const DB_VERSION = 1;
 
 export interface CacheEntry {
   channel: string; // normalized lowercase key
-  clips: any[];
+  clips: TwitchClip[];
   savedAt: string; // ISO
 }
 
@@ -40,7 +42,7 @@ export async function loadCache(channel: string): Promise<CacheEntry | null> {
   }
 }
 
-export async function saveCache(channel: string, clips: any[]): Promise<void> {
+export async function saveCache(channel: string, clips: TwitchClip[]): Promise<void> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const entry: CacheEntry = {
