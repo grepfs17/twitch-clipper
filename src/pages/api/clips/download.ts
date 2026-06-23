@@ -4,7 +4,7 @@ import {
   getClipMetadata,
   jsonError,
 } from "../../../lib/twitch-gql";
-import { isSameOrigin } from "../../../lib/utils";
+import { isSameOrigin, checkRateLimit } from "../../../lib/utils";
 
 const QUALITY_TO_FORMAT: Record<string, string> = {
   best: "best",
@@ -82,8 +82,23 @@ function findFormatUrl(clipMeta: any, quality: string): string | null {
   return null;
 }
 
-export const GET: APIRoute = async ({ request }: { request: Request }) => {
+export const GET: APIRoute = async ({ request, locals }: any) => {
   if (!isSameOrigin(request)) return jsonError("Forbidden", 403);
+
+  const env = locals?.runtime?.env || {};
+  const rateLimit = await checkRateLimit(request, env, {
+    maxRequests: 10,
+    windowSec: 60,
+  });
+  if (!rateLimit.allowed) {
+    return new Response(JSON.stringify({ error: "Too many requests" }), {
+      status: 429,
+      headers: {
+        "Content-Type": "application/json",
+        "Retry-After": String(rateLimit.retryAfter),
+      },
+    });
+  }
 
   const params = new URL(request.url).searchParams;
   const clipUrl = params.get("url");

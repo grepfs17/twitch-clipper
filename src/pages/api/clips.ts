@@ -5,7 +5,7 @@ import {
   getClips,
   getGames,
 } from "../../lib/twitch";
-import { isSameOrigin } from "../../lib/utils";
+import { isSameOrigin, checkRateLimit } from "../../lib/utils";
 
 const gameNameCache = new Map<string, string>();
 
@@ -42,8 +42,23 @@ function attachGameNames(clips: any[]): any[] {
   }));
 }
 
-export const GET: APIRoute = async ({ request }: { request: Request }) => {
+export const GET: APIRoute = async ({ request, locals }: any) => {
   if (!isSameOrigin(request)) return json({ error: "Forbidden" }, 403);
+
+  const env = locals?.runtime?.env || {};
+  const rateLimit = await checkRateLimit(request, env, {
+    maxRequests: 30,
+    windowSec: 60,
+  });
+  if (!rateLimit.allowed) {
+    return new Response(JSON.stringify({ error: "Too many requests" }), {
+      status: 429,
+      headers: {
+        "Content-Type": "application/json",
+        "Retry-After": String(rateLimit.retryAfter),
+      },
+    });
+  }
 
   const params = new URL(request.url).searchParams;
   const channel = params.get("channel");

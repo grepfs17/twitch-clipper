@@ -5,6 +5,12 @@
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
     "binding": "ASSETS",
-    "directory": "./dist",
+    "directory": "./dist"
   },
+  "kv_namespaces": [
+    {
+      "binding": "RATE_LIMIT_KV",
+      "id": "e4aaac15dcee4a21bb6c895cd3ff9dc1"
+    }
+  ]
 }

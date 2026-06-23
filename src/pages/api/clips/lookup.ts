@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { TWITCH_CLIENT_ID } from "astro:env/server";
 import { getAccessToken, getGames } from "../../../lib/twitch";
-import { isSameOrigin } from "../../../lib/utils";
+import { isSameOrigin, checkRateLimit } from "../../../lib/utils";
 
 const CLIP_SLUG_REGEX = /(?:clips\.twitch\.tv\/|clip\/)([\w-]+)/i;
 
@@ -26,8 +26,23 @@ async function hydrateGameName(clip: any, token: string) {
   clip.game_name = name || "Loading...";
 }
 
-export const GET: APIRoute = async ({ request }: { request: Request }) => {
+export const GET: APIRoute = async ({ request, locals }: any) => {
   if (!isSameOrigin(request)) return json({ error: "Forbidden" }, 403);
+
+  const env = locals?.runtime?.env || {};
+  const rateLimit = await checkRateLimit(request, env, {
+    maxRequests: 30,
+    windowSec: 60,
+  });
+  if (!rateLimit.allowed) {
+    return new Response(JSON.stringify({ error: "Too many requests" }), {
+      status: 429,
+      headers: {
+        "Content-Type": "application/json",
+        "Retry-After": String(rateLimit.retryAfter),
+      },
+    });
+  }
 
   const clipUrl = new URL(request.url).searchParams.get("url");
 
