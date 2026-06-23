@@ -127,10 +127,12 @@ async function fetchWindow(
   onProgress?: (n: number) => void,
   pageDelay = 100,
   pageCap: number | null = null,
-): Promise<any[]> {
+): Promise<{ clips: any[]; failed: boolean; reason?: string }> {
   const maxClips = pageCap ?? parseInt(import.meta.env.PUBLIC_MAX_CLIPS || "50000", 10);
   const result: any[] = [];
   let cursor = "";
+  let failed = false;
+  let failReason: string | undefined;
 
   while (true) {
     let data: any;
@@ -164,6 +166,11 @@ async function fetchWindow(
         // For non-429 errors, only show a toast once per window to avoid
         // spamming the user during multi-page pagination.
         terminalToast(`Clips fetch failed: ${err.message}`);
+        failed = true;
+        failReason = err.message;
+      } else {
+        failed = true;
+        failReason = err instanceof Error ? err.message : String(err);
       }
       break;
     }
@@ -195,7 +202,7 @@ async function fetchWindow(
     await new Promise((r) => setTimeout(r, delay));
   }
 
-  return result;
+  return { clips: result, failed, reason: failReason };
 }
 
 /**
@@ -207,7 +214,7 @@ async function fetchTopClips(
   channel: string,
   onProgress?: (n: number) => void,
   pageCap: number | null = null,
-): Promise<any[]> {
+): Promise<{ clips: any[]; failed: boolean; reason?: string }> {
   return fetchWindow(
     channel,
     "all",
@@ -256,12 +263,55 @@ async function loadAllClips() {
   if (els.progressBar) els.progressBar.style.width = "0%";
 
   const range = elements.rangeFilter?.value || "all";
-  const backgroundClips = await runLoadAllWindowPool(range, els);
+  const MAX_AUTO_RETRIES = 3;
+  const RETRY_COOLDOWN_MS = 15_000;
 
-  finalizeLoadAll(backgroundClips, els);
-  updateCategories();
-  applyFilters();
+  let attempt = 0;
+  let totalNewClips: any[] = [];
+  let lastFailedCount = 0;
 
+  while (true) {
+    if (pendingWindows.length === 0) break;
+
+    if (attempt > 0) {
+      // Auto-retry: wait for the Twitch rate-limit window to clear, then
+      // try the failed windows again silently.
+      terminalToast(
+        `Retrying ${pendingWindows.length} failed window${pendingWindows.length > 1 ? "s" : ""} in ${RETRY_COOLDOWN_MS / 1000}s…`,
+        4000,
+      );
+      await new Promise((r) => setTimeout(r, RETRY_COOLDOWN_MS));
+    }
+
+    if (els.progressBar) els.progressBar.style.width = "0%";
+    if (els.progressLabel)
+      els.progressLabel.textContent = attempt === 0
+        ? "Loading all clips…"
+        : `Retrying ${pendingWindows.length} window${pendingWindows.length > 1 ? "s" : ""} (attempt ${attempt + 1}/${MAX_AUTO_RETRIES + 1})…`;
+
+    const { clips, failedWindows } = await runLoadAllWindowPool(range, els);
+    totalNewClips.push(...clips);
+    lastFailedCount = failedWindows.length;
+
+    // Successful clips from this attempt are appended immediately so
+    // the user sees them in the grid as soon as they're fetched.
+    if (clips.length > 0) {
+      appendClips(clips);
+      updateCategories();
+      applyFilters();
+    }
+
+    if (failedWindows.length === 0) break; // all done
+    if (attempt >= MAX_AUTO_RETRIES) break; // exhausted retries
+    attempt++;
+  }
+
+  finalizeLoadAll(
+    totalNewClips,
+    lastFailedCount,
+    pendingWindows.length,
+    els,
+  );
   await saveAndAnnounceCache(currentChannel);
   setTimeout(() => els.progressArea?.classList.add("hidden"), 2000);
 }
@@ -297,8 +347,9 @@ function getLoadAllProgressElements(): LoadAllProgressEls {
 async function runLoadAllWindowPool(
   range: string,
   els: LoadAllProgressEls,
-): Promise<any[]> {
+): Promise<{ clips: any[]; failedWindows: TimeWindow[] }> {
   const backgroundClips: any[] = [];
+  const failedWindows: TimeWindow[] = [];
   const totalClipsBefore = allClips.length;
   const totalWindows = pendingWindows.length;
   const startTime = Date.now();
@@ -326,8 +377,13 @@ async function runLoadAllWindowPool(
     3,
     windows,
     async (win) => {
-      const batch = await fetchWindow(currentChannel, range, win);
-      if (batch.length > 0) backgroundClips.push(...batch);
+      const { clips, failed } = await fetchWindow(currentChannel, range, win);
+      if (clips.length > 0) backgroundClips.push(...clips);
+      if (failed) {
+        // Re-queue the window in pendingWindows for the auto-retry loop
+        // (or for a manual click if the user gives up waiting).
+        failedWindows.push(win);
+      }
     },
     () => {
       windowsProcessed++;
@@ -335,16 +391,30 @@ async function runLoadAllWindowPool(
     },
   );
 
-  return backgroundClips;
+  // Re-queue any failed windows so a subsequent "Load all clips" can
+  // try them again.
+  pendingWindows.push(...failedWindows);
+
+  return { clips: backgroundClips, failedWindows };
 }
 
-function finalizeLoadAll(backgroundClips: any[], els: LoadAllProgressEls) {
+function finalizeLoadAll(
+  totalNewClips: any[],
+  lastFailedCount: number,
+  remainingPending: number,
+  els: LoadAllProgressEls,
+) {
   if (els.progressBar) els.progressBar.style.width = "100%";
-  if (els.progressLabel)
-    els.progressLabel.textContent = "✓ Complete — saving to cache…";
-  if (els.progressStats) els.progressStats.textContent = "";
 
-  if (backgroundClips.length > 0) appendClips(backgroundClips);
+  if (remainingPending > 0) {
+    // Auto-retry gave up; still some windows couldn't be fetched.
+    if (els.progressLabel)
+      els.progressLabel.textContent = `⚠ ${remainingPending} window${remainingPending > 1 ? "s" : ""} could not be loaded (last attempt: ${lastFailedCount} failed). Try again later.`;
+  } else {
+    if (els.progressLabel)
+      els.progressLabel.textContent = "✓ Complete — saving to cache…";
+    if (els.progressStats) els.progressStats.textContent = "";
+  }
 
   if (elements.loader) elements.loader.classList.add("hidden");
   if (elements.loaderText) elements.loaderText.textContent = "";
@@ -462,7 +532,7 @@ async function fetchInitialBatch(
 
   if (range === "all") {
     // Unbounded → Twitch returns by view count: user sees top clips instantly
-    const firstBatch = await fetchTopClips(
+    const { clips: firstBatch } = await fetchTopClips(
       channel,
       (n) => {
         if (elements.loaderText) {
@@ -477,7 +547,7 @@ async function fetchInitialBatch(
 
   // Time-bounded ranges: use windowed strategy from the start
   const windows = buildWindows(range);
-  const firstBatch = await fetchWindow(
+  const { clips: firstBatch } = await fetchWindow(
     channel,
     range,
     windows[0],
@@ -557,7 +627,7 @@ export function initSearch() {
     const range = elements.rangeFilter?.value || "all";
 
     if (range === "all") {
-      const firstBatch = await fetchTopClips(
+      const { clips: firstBatch } = await fetchTopClips(
         currentChannel,
         (n) => {
           if (elements.loaderText) {
@@ -574,7 +644,7 @@ export function initSearch() {
       syncLoadAllBtn();
     } else {
       const windows = buildWindows(range);
-      const firstBatch = await fetchWindow(
+      const { clips: firstBatch } = await fetchWindow(
         currentChannel,
         range,
         windows[0],
