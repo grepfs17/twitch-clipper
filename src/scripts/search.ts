@@ -8,7 +8,7 @@ import {
   renderClips,
 } from "./clips";
 import { fetchClips, ClipsFetchError } from "./api";
-import { updateCategories } from "./categories";
+import { updateCategories, selectCategory } from "./categories";
 import { addRecent } from "./recent";
 import { loadCache, saveCache, clearCache } from "./cache";
 import { terminalConfirm, terminalToast, rateLimitToast } from "./notify";
@@ -481,10 +481,10 @@ function resetFilters() {
   if (elements.filterSearchInput) elements.filterSearchInput.value = "";
   elements.filterSearchClear?.classList.add("hidden");
 
-  if (elements.categoryFilter) elements.categoryFilter.value = "all";
-  if (elements.categoryInput) elements.categoryInput.value = "";
-  elements.categoryClear?.classList.add("hidden");
-  elements.categoryList?.classList.remove("open");
+  // Use the same helper the category dropdown uses when the user picks
+  // "All Categories", so the visible input + clear button + hidden
+  // filter value all stay in sync.
+  selectCategory("all", "All Categories");
 
   if (elements.sortFilter) elements.sortFilter.value = "views";
 }
