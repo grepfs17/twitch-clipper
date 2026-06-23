@@ -18,10 +18,6 @@ const QUALITY_TO_FORMAT: Record<string, string> = {
   "portrait-480": "portrait-480",
   "portrait-720": "portrait-720",
   "portrait-1080": "portrait-1080",
-  "portrait-1080p": "portrait-1080",
-  "portrait-720p": "portrait-720",
-  "portrait-480p": "portrait-480",
-  "portrait-360p": "portrait-360",
 };
 
 function sanitizeFilename(name: string): string {
@@ -44,12 +40,12 @@ function findFormatUrl(clipMeta: any, quality: string): string | null {
   const isPortrait = quality.startsWith("portrait-");
   const targetHeight = parseInt(quality.replace("portrait-", "")) || 0;
 
-  for (let i = 0; i < clipMeta.assets.length; i++) {
-    const asset = clipMeta.assets[i];
-    const videoQualities = asset.videoQualities || [];
-    const assetIsPortrait = i > 0;
-
+  for (const asset of clipMeta.assets) {
+    // Match by asset id tag (LANDSCAPE/PORTRAIT), not array index
+    const assetIsPortrait = /PORTRAIT$/i.test(asset.id || "");
     if (isPortrait !== assetIsPortrait) continue;
+
+    const videoQualities = asset.videoQualities || [];
 
     if (quality === "best") {
       const best = videoQualities[0];
@@ -68,7 +64,7 @@ function findFormatUrl(clipMeta: any, quality: string): string | null {
     }
 
     for (const q of videoQualities) {
-      const height = parseInt(q.quality) || 0;
+      const height = q.height || parseInt(q.quality) || 0;
       if (height === targetHeight && q.sourceURL) {
         return `${q.sourceURL}?sig=${sig}&token=${encodeURIComponent(token)}`;
       }

@@ -14,10 +14,7 @@ interface FormatOption {
 }
 
 function extractFormats(clipMeta: any): FormatOption[] {
-  const sig = clipMeta.playbackAccessToken?.signature;
-  const token = clipMeta.playbackAccessToken?.value;
-
-  if (!sig || !token || !clipMeta.assets) {
+  if (!clipMeta.assets) {
     return [{ id: "best", label: "Best Quality", group: "landscape" }];
   }
 
@@ -30,21 +27,25 @@ function extractFormats(clipMeta: any): FormatOption[] {
   const landscape: FormatOption[] = [];
   const portrait: FormatOption[] = [];
 
-  for (let i = 0; i < clipMeta.assets.length; i++) {
-    const asset = clipMeta.assets[i];
+  for (const asset of clipMeta.assets) {
+    // Trust the asset id (e.g. ".../LANDSCAPE", ".../PORTRAIT") over the
+    // array index — Twitch has shipped clips with only one of the two
+    // assets, and the order is not guaranteed.
+    const isPortrait = /PORTRAIT$/i.test(asset.id || "");
     const videoQualities = asset.videoQualities || [];
-    const isPortrait = i > 0;
 
     for (const quality of videoQualities) {
       if (!quality.sourceURL) continue;
 
-      const qualityId = quality.quality || "best";
-      const formatId = isPortrait ? `portrait-${qualityId}` : qualityId;
-
-      if (seen.has(formatId)) continue;
+      // Label and select by *height* (the larger dimension) — Twitch's
+      // `quality` field for portrait is actually the width, which is
+      // confusing for users. Falling back to `quality` only if `height`
+      // is missing.
+      const height = quality.height || parseInt(quality.quality) || 0;
+      const formatId = isPortrait ? `portrait-${height}` : `${height}`;
+      if (!height || seen.has(formatId)) continue;
       seen.add(formatId);
 
-      const height = parseInt(qualityId) || 0;
       const fps = quality.frameRate ? Math.round(quality.frameRate) : null;
       const fpsSuffix = fps && fps > 30 ? ` (${fps}fps)` : "";
       const label = isPortrait
