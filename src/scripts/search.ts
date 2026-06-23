@@ -126,8 +126,9 @@ async function fetchWindow(
   win: TimeWindow,
   onProgress?: (n: number) => void,
   pageDelay = 100,
+  pageCap: number | null = null,
 ): Promise<any[]> {
-  const maxClips = parseInt(import.meta.env.PUBLIC_MAX_CLIPS || "50000", 10);
+  const maxClips = pageCap ?? parseInt(import.meta.env.PUBLIC_MAX_CLIPS || "50000", 10);
   const result: any[] = [];
   let cursor = "";
 
@@ -199,13 +200,15 @@ async function fetchWindow(
 async function fetchTopClips(
   channel: string,
   onProgress?: (n: number) => void,
+  pageCap: number | null = null,
 ): Promise<any[]> {
   return fetchWindow(
     channel,
     "all",
     { startedAt: "", endedAt: "" },
     onProgress,
-    50,
+    100,
+    pageCap,
   );
 }
 
@@ -446,24 +449,40 @@ async function fetchInitialBatch(
   channel: string,
   range: string,
 ): Promise<{ firstBatch: any[]; queuedWindows: TimeWindow[] }> {
+  // Cap the initial render to 1 page (100 clips) for a snappy first
+  // paint. The remaining windows stay queued behind the "Load all
+  // clips" button. The cached path skips this entirely.
+  const INITIAL_PAGE_CAP = 100;
+
   if (range === "all") {
     // Unbounded → Twitch returns by view count: user sees top clips instantly
-    const firstBatch = await fetchTopClips(channel, (n) => {
-      if (elements.loaderText) {
-        elements.loaderText.textContent = `Loading top clips… ${n}`;
-      }
-    });
+    const firstBatch = await fetchTopClips(
+      channel,
+      (n) => {
+        if (elements.loaderText) {
+          elements.loaderText.textContent = `Loading top clips… ${n}`;
+        }
+      },
+      INITIAL_PAGE_CAP,
+    );
     // Queue ALL time windows so "Load all clips" covers full history
     return { firstBatch, queuedWindows: buildWindows("all") };
   }
 
   // Time-bounded ranges: use windowed strategy from the start
   const windows = buildWindows(range);
-  const firstBatch = await fetchWindow(channel, range, windows[0], (n) => {
-    if (elements.loaderText) {
-      elements.loaderText.textContent = `Loading… ${n} clips`;
-    }
-  });
+  const firstBatch = await fetchWindow(
+    channel,
+    range,
+    windows[0],
+    (n) => {
+      if (elements.loaderText) {
+        elements.loaderText.textContent = `Loading… ${n} clips`;
+      }
+    },
+    100,
+    INITIAL_PAGE_CAP,
+  );
   return { firstBatch, queuedWindows: windows.slice(1) };
 }
 
@@ -532,11 +551,15 @@ export function initSearch() {
     const range = elements.rangeFilter?.value || "all";
 
     if (range === "all") {
-      const firstBatch = await fetchTopClips(currentChannel, (n) => {
-        if (elements.loaderText) {
-          elements.loaderText.textContent = `Loading top clips... ${n}`;
-        }
-      });
+      const firstBatch = await fetchTopClips(
+        currentChannel,
+        (n) => {
+          if (elements.loaderText) {
+            elements.loaderText.textContent = `Loading top clips... ${n}`;
+          }
+        },
+        100,
+      );
       pendingWindows = buildWindows("all");
       addRecent(currentChannel);
       setAllClips(firstBatch);
@@ -554,6 +577,8 @@ export function initSearch() {
             elements.loaderText.textContent = `Loading... ${n} clips`;
           }
         },
+        100,
+        100,
       );
       pendingWindows = windows.slice(1);
       addRecent(currentChannel);
