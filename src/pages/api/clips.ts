@@ -14,8 +14,34 @@ import {
   json,
 } from "../../lib/utils";
 
-const gameNameCache = new Map<string, string>();
 const CLIP_PAGE_CACHE_TTL = 60; // seconds
+// Game name mappings change very rarely (Twitch only allows renaming a
+// category a few times per year), but a long-lived Worker isolate would
+// otherwise grow this Map without bound. Persist to KV with a 7-day TTL
+// when the binding is available, fall back to in-memory for local dev.
+const GAME_NAME_CACHE_TTL = 7 * 24 * 60 * 60; // 7 days
+
+async function readGameNameCache(
+  kv: KVNamespace | undefined,
+  id: string,
+): Promise<string | null> {
+  if (kv) return kv.get(`game:${id}`);
+  return gameNameCacheMem.get(id) ?? null;
+}
+
+async function writeGameNameCache(
+  kv: KVNamespace | undefined,
+  id: string,
+  name: string,
+): Promise<void> {
+  if (kv) {
+    await kv.put(`game:${id}`, name, { expirationTtl: GAME_NAME_CACHE_TTL });
+  } else {
+    gameNameCacheMem.set(id, name);
+  }
+}
+
+const gameNameCacheMem = new Map<string, string>();
 
 const RANGE_HOURS: Record<string, number> = {
   "24h": 24,
@@ -46,21 +72,32 @@ function clipPageCacheKey(
 async function hydrateGameNameCache(
   gameIds: string[],
   token: string,
+  kv: KVNamespace | undefined,
   onBudget?: (b: { remaining: number | null; resetAt: number | null }) => void,
 ) {
-  const uncached = gameIds.filter((id) => !gameNameCache.has(id));
+  const uncached: string[] = [];
+  for (const id of gameIds) {
+    if (!(await readGameNameCache(kv, id))) uncached.push(id);
+  }
   if (uncached.length === 0) return;
   const games = await getGames(uncached, token, { onBudget });
-  for (const g of games) gameNameCache.set(g.id, g.name);
+  await Promise.all(
+    games.map((g) => writeGameNameCache(kv, g.id, g.name)),
+  );
 }
 
-function attachGameNames(clips: any[]): any[] {
-  return clips.map((clip) => ({
-    ...clip,
-    game_name:
-      gameNameCache.get(clip.game_id) ||
-      (clip.game_id ? "Loading..." : "No Category"),
-  }));
+async function attachGameNames(
+  clips: any[],
+  kv: KVNamespace | undefined,
+): Promise<any[]> {
+  return Promise.all(
+    clips.map(async (clip) => ({
+      ...clip,
+      game_name:
+        (await readGameNameCache(kv, clip.game_id)) ||
+        (clip.game_id ? "Loading..." : "No Category"),
+    })),
+  );
 }
 
 export const GET: APIRoute = async ({ request }: any) => {
@@ -108,6 +145,7 @@ export const GET: APIRoute = async ({ request }: any) => {
     const startedAt = resolveStartedAt(startedAtParam, timeRange);
     const cacheKey = clipPageCacheKey(broadcasterId, startedAt, endedAt, after);
     const cacheKv = (env as { CLIP_CACHE_KV?: KVNamespace }).CLIP_CACHE_KV;
+    const gameKv = cacheKv;
 
     let clipsData: Awaited<ReturnType<typeof getClips>> | null = null;
     if (cacheKv) {
@@ -157,6 +195,7 @@ export const GET: APIRoute = async ({ request }: any) => {
     await hydrateGameNameCache(
       gameIds,
       token,
+      gameKv,
       (b) => writeTwitchBudget(env, b.remaining, b.resetAt),
     );
 
@@ -168,7 +207,7 @@ export const GET: APIRoute = async ({ request }: any) => {
 
     return new Response(
       JSON.stringify({
-        clips: attachGameNames(clipsData.data),
+        clips: await attachGameNames(clipsData.data, gameKv),
         pagination: clipsData.pagination,
         broadcasterId,
       }),

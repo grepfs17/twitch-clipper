@@ -24,7 +24,7 @@ function sendEmbedCommand(func: string, args: any[] = []) {
   if (!iframe?.contentWindow) return;
   iframe.contentWindow.postMessage(
     JSON.stringify({ event: "command", func, args }),
-    "*",
+    "https://clips.twitch.tv",
   );
 }
 function saveBlob(blob: Blob, response: Response) {
@@ -276,13 +276,18 @@ function closeClipModal() {
 
 async function downloadClip(quality: string) {
   if (!currentClipUrl || isDownloading) return;
-  isDownloading = true;
 
-  const btn = elements.modalDownloadBtn!;
+  const btn = elements.modalDownloadBtn;
+  const progressEl = elements.downloadProgress;
+  const progressFill = elements.downloadProgressFill;
+  const progressText = elements.downloadProgressText;
+  if (!btn || !progressEl || !progressFill || !progressText) {
+    console.warn("Download UI elements are missing from the DOM");
+    return;
+  }
+
+  isDownloading = true;
   const originalHTML = btn.innerHTML;
-  const progressEl = elements.downloadProgress!;
-  const progressFill = elements.downloadProgressFill!;
-  const progressText = elements.downloadProgressText!;
   setDownloadButtonBusy(btn);
   showProgressBar(progressEl, progressFill, progressText);
 
@@ -540,3 +545,11 @@ export function initModal() {
     openClipModal(e.detail);
   }) as EventListener);
 }
+
+// @internal — exported for unit tests. Not part of the public API.
+export const __testing = {
+  slugFromUrl,
+  sanitizeFilename,
+  makeFilename,
+  formatClipDate,
+};

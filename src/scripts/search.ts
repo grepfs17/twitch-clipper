@@ -456,6 +456,13 @@ async function handleSearch() {
 
   if (range === "all" && (await loadFromCacheIfPresent(channel))) return;
 
+  await doFreshSearch(channel, range);
+}
+
+/** Bypass the cache and pull a fresh first batch. Used by both the
+ *  initial search (after a cache miss/decline) and the cache refresh
+ *  button, so they share the same window-building + apply-results flow. */
+async function doFreshSearch(channel: string, range: string) {
   const { firstBatch, queuedWindows } = await fetchInitialBatch(channel, range);
   pendingWindows = queuedWindows;
 
@@ -621,6 +628,9 @@ export function initSearch() {
 
   elements.cacheRefresh?.addEventListener("click", async () => {
     if (!currentChannel) return;
+    const channel = currentChannel;
+    const range = elements.rangeFilter?.value || "all";
+
     hideCacheIndicator();
     elements.loader?.classList.remove("hidden");
     if (elements.loaderText)
@@ -628,7 +638,7 @@ export function initSearch() {
     elements.emptyState?.classList.add("hidden");
 
     try {
-      await clearCache(currentChannel);
+      await clearCache(channel);
     } catch {
       /* ignore */
     }
@@ -637,47 +647,14 @@ export function initSearch() {
     setDisplayedClips([]);
     if (elements.clipsGrid) elements.clipsGrid.innerHTML = "";
 
-    const range = elements.rangeFilter?.value || "all";
-
-    if (range === "all") {
-      const { clips: firstBatch } = await fetchTopClips(
-        currentChannel,
-        (n) => {
-          if (elements.loaderText) {
-            elements.loaderText.textContent = `Loading top clips... ${n}`;
-          }
-        },
-        100,
-      );
-      pendingWindows = buildWindows("all");
-      addRecent(currentChannel);
-      setAllClips(firstBatch);
-      updateCategories();
-      applyFilters();
-      syncLoadAllBtn();
-    } else {
-      const windows = buildWindows(range);
-      const { clips: firstBatch } = await fetchWindow(
-        currentChannel,
-        range,
-        windows[0],
-        (n) => {
-          if (elements.loaderText) {
-            elements.loaderText.textContent = `Loading... ${n} clips`;
-          }
-        },
-        100,
-        100,
-      );
-      pendingWindows = windows.slice(1);
-      addRecent(currentChannel);
-      setAllClips(firstBatch);
-      updateCategories();
-      applyFilters();
-      syncLoadAllBtn();
-    }
-
-    elements.loader?.classList.add("hidden");
-    if (elements.loaderText) elements.loaderText.textContent = "";
+    await doFreshSearch(channel, range);
   });
 }
+
+// @internal — exported for unit tests. Not part of the public API.
+export const __testing = {
+  buildWindows,
+  asyncPool,
+  formatEta,
+  formatCacheAge,
+};
