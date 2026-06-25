@@ -67,29 +67,40 @@ npx wrangler deploy
 
 ```
 src/
+  layouts/
+    Layout.astro        Base HTML layout with meta tags, fonts, and global styles
   lib/
-    twitch.ts          Twitch API client (OAuth, clips, games endpoints)
+    twitch.ts           Twitch Helix API client (OAuth, clips, games endpoints)
+    twitch-gql.ts       Twitch GQL API client (clip metadata, playback tokens)
+    utils.ts            Shared utilities (rate limiting, budget tracking, helpers)
   pages/
     api/
-      clips.ts         Proxy endpoint for fetching clips from Twitch API
+      clips.ts          Proxy endpoint for fetching clips from Twitch API
       clips/
-        download.ts    Server-side download handler via GQL streaming proxy
-        formats.ts     Clip quality/format listing via GQL
-    index.astro        Main page with search UI and clip grid
+        download.ts     Server-side download handler via GQL streaming proxy
+        formats.ts      Clip quality/format listing via GQL
+        lookup.ts       Clip lookup by URL via GQL
+    index.astro         Main page with search UI and clip grid
+    sitemap.xml.ts      Dynamic sitemap generator
   scripts/
-    index.ts           Application entry point, initializes all modules
-    api.ts             HTTP client for API proxy calls
-    cache.ts           IndexedDB cache for storing full clip libraries per channel
-    categories.ts      Game category detection and filtering
-    clips.ts           Clip rendering, lazy loading, and filter logic
-    dom.ts             DOM element references
-    filters.ts         Sort and filter UI state
-    modal.ts           Clip preview modal and download progress
-    notify.ts          Terminal-style confirmation dialogs and toast notifications
-    recent.ts          Recent search history stored in localStorage
-    search.ts          Search orchestration, time window pagination, cache handling
+    index.ts            Application entry point, initializes all modules
+    api.ts              HTTP client for API proxy calls
+    cache.ts            IndexedDB cache for storing full clip libraries per channel
+    categories.ts       Game category detection and filtering
+    clip-url.ts         Clip URL paste-to-open functionality
+    clips.ts            Clip rendering, lazy loading, and filter logic
+    dom.ts              DOM element references
+    favorites.ts        Favorites system (localStorage-based)
+    filters.ts          Sort and filter UI state
+    modal.ts            Clip preview modal and download progress
+    notes.ts            Per-clip notes (localStorage-based)
+    notify.ts           Terminal-style confirmation dialogs and toast notifications
+    recent.ts           Recent search history stored in localStorage
+    search.ts           Search orchestration, time window pagination, cache handling
+    types.ts            Shared TypeScript types
+    typewriter.ts       Typewriter animation for the hero heading
   styles/
-    index.css          All styles
+    index.css           All styles
 ```
 
 ## Features
