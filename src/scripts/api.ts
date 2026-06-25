@@ -34,7 +34,11 @@ export async function fetchClips(
   after = "",
   startedAt?: string,
   endedAt?: string,
-): Promise<{ body: TwitchClipsResponse; budget: TwitchBudget; status: number }> {
+): Promise<{
+  body: TwitchClipsResponse;
+  budget: TwitchBudget;
+  status: number;
+}> {
   let url = `/api/clips?channel=${encodeURIComponent(channel)}&timeRange=${timeRange}&after=${after}`;
   if (startedAt) url += `&startedAt=${encodeURIComponent(startedAt)}`;
   if (endedAt) url += `&endedAt=${encodeURIComponent(endedAt)}`;

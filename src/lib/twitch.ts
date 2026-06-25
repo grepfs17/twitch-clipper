@@ -38,7 +38,10 @@ export async function getAccessToken() {
     throw new Error(`Failed to get access token: ${JSON.stringify(error)}`);
   }
 
-  const data = (await response.json()) as { access_token: string; expires_in?: number };
+  const data = (await response.json()) as {
+    access_token: string;
+    expires_in?: number;
+  };
   _cachedToken = data.access_token;
   _tokenExpiresAt = Date.now() + (data.expires_in ?? 3600) * 1000;
   return _cachedToken!;

@@ -181,7 +181,10 @@ function filterBySearch(clips: TwitchClip[], searchText: string): TwitchClip[] {
   );
 }
 
-const SORT_COMPARATORS: Record<string, (a: TwitchClip, b: TwitchClip) => number> = {
+const SORT_COMPARATORS: Record<
+  string,
+  (a: TwitchClip, b: TwitchClip) => number
+> = {
   views: (a, b) => b.view_count - a.view_count,
   latest: (a, b) =>
     new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),

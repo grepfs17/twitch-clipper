@@ -137,7 +137,9 @@ async function handleFavClipClick(target: HTMLElement): Promise<boolean> {
   const clipUrl = clipItem.getAttribute("data-clip-url");
   if (!clipUrl) return true;
   try {
-    const r = await fetch(`/api/clips/lookup?url=${encodeURIComponent(clipUrl)}`);
+    const r = await fetch(
+      `/api/clips/lookup?url=${encodeURIComponent(clipUrl)}`,
+    );
     const data: { clip?: TwitchClip } = await r.json();
     if (data.clip) {
       window.dispatchEvent(
@@ -153,7 +155,8 @@ async function handleFavClipClick(target: HTMLElement): Promise<boolean> {
 async function handleFavoritesGridClick(e: MouseEvent) {
   const target = e.target as HTMLElement;
   if (handleFavRemoveClick(target)) return;
-  if (toggleClosestCollapse(target, ".fav-channel-header", ".fav-channel")) return;
+  if (toggleClosestCollapse(target, ".fav-channel-header", ".fav-channel"))
+    return;
   if (toggleClosestCollapse(target, ".fav-game-header", ".fav-game")) return;
   await handleFavClipClick(target);
 }

@@ -998,7 +998,9 @@ input[type="text"]#channelInput::placeholder {
     background: transparent;
     color: var(--amber);
     font-size: 0.75rem;
-    transition: background 0.2s, color 0.2s;
+    transition:
+        background 0.2s,
+        color 0.2s;
 }
 
 .github-link:hover {

@@ -1,8 +1,7 @@
-// This is a public key used by Twitch
 import { jsonError } from "./utils";
-
 export { jsonError };
 
+// This is a public key used by Twitch
 const TWITCH_GQL_CLIENT_ID = "kimne78kx3ncx6brgo4mv6wki5h1ko";
 
 const SHARE_CLIP_QUERY = {

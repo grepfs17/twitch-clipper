@@ -42,7 +42,10 @@ export async function loadCache(channel: string): Promise<CacheEntry | null> {
   }
 }
 
-export async function saveCache(channel: string, clips: TwitchClip[]): Promise<void> {
+export async function saveCache(
+  channel: string,
+  clips: TwitchClip[],
+): Promise<void> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const entry: CacheEntry = {
