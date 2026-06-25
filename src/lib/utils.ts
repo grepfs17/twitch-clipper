@@ -41,6 +41,7 @@ const TWITCH_BUDGET_FLOOR = 20;
 // meaningfully or the reset window changes.
 let memBudget: TwitchBudget = { remaining: null, resetAt: null };
 let lastKvWriteRemaining: number | null = null;
+let lastKvWriteResetAt: number | null = null;
 let lastKvWriteTime = 0;
 const KV_WRITE_MIN_INTERVAL_MS = 10_000; // don't write more than once per 10s
 const KV_WRITE_MIN_DELTA = 50; // only write when remaining drops by this much
@@ -100,12 +101,13 @@ export async function writeTwitchBudget(
     lastKvWriteRemaining != null && remaining != null
       ? lastKvWriteRemaining - remaining
       : Infinity;
-  const resetChanged = resetAt !== memBudget.resetAt;
+  const resetChanged = lastKvWriteResetAt !== resetAt;
   const enoughTime = now - lastKvWriteTime >= KV_WRITE_MIN_INTERVAL_MS;
 
   // Only persist to KV when it matters
   if (remainingDelta >= KV_WRITE_MIN_DELTA || resetChanged || enoughTime) {
     lastKvWriteRemaining = remaining;
+    lastKvWriteResetAt = resetAt;
     lastKvWriteTime = now;
     await kv.put(
       TWITCH_BUDGET_KEY,
