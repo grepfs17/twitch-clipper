@@ -35,6 +35,16 @@ const TWITCH_BUDGET_KEY = "twitch:budget";
 // load well before that to leave headroom for retries and other endpoints.
 const TWITCH_BUDGET_FLOOR = 20;
 
+// In-memory budget cache — avoids hammering KV on every request during
+// bursty paginated fetches. The KV value is the source of truth for
+// cross-isolate consistency, but we only write when the count drops
+// meaningfully or the reset window changes.
+let memBudget: TwitchBudget = { remaining: null, resetAt: null };
+let lastKvWriteRemaining: number | null = null;
+let lastKvWriteTime = 0;
+const KV_WRITE_MIN_INTERVAL_MS = 10_000; // don't write more than once per 10s
+const KV_WRITE_MIN_DELTA = 50; // only write when remaining drops by this much
+
 export async function readTwitchBudget(env: {
   RATE_LIMIT_KV?: {
     get(key: string): Promise<string | null>;
@@ -45,16 +55,21 @@ export async function readTwitchBudget(env: {
     ): Promise<void>;
   };
 }): Promise<TwitchBudget> {
+  // Prefer in-memory cache (more current during bursts)
+  if (memBudget.remaining != null) return memBudget;
+
   const kv = env.RATE_LIMIT_KV;
   if (!kv) return { remaining: null, resetAt: null };
   const raw = await kv.get(TWITCH_BUDGET_KEY);
   if (!raw) return { remaining: null, resetAt: null };
   try {
     const parsed = JSON.parse(raw) as TwitchBudget;
-    return {
+    const budget = {
       remaining: typeof parsed.remaining === "number" ? parsed.remaining : null,
       resetAt: typeof parsed.resetAt === "number" ? parsed.resetAt : null,
     };
+    memBudget = budget;
+    return budget;
   } catch {
     return { remaining: null, resetAt: null };
   }
@@ -74,14 +89,30 @@ export async function writeTwitchBudget(
   remaining: number | null,
   resetAt: number | null,
 ): Promise<void> {
+  // Always update in-memory for immediate consistency within this isolate
+  memBudget = { remaining, resetAt };
+
   const kv = env.RATE_LIMIT_KV;
   if (!kv) return;
-  const value: TwitchBudget = { remaining, resetAt };
-  // Keep the budget record around for 2x the typical reset window (Twitch
-  // resets every 60s, so 120s is plenty).
-  await kv.put(TWITCH_BUDGET_KEY, JSON.stringify(value), {
-    expirationTtl: 120,
-  });
+
+  const now = Date.now();
+  const remainingDelta =
+    lastKvWriteRemaining != null && remaining != null
+      ? lastKvWriteRemaining - remaining
+      : Infinity;
+  const resetChanged = resetAt !== memBudget.resetAt;
+  const enoughTime = now - lastKvWriteTime >= KV_WRITE_MIN_INTERVAL_MS;
+
+  // Only persist to KV when it matters
+  if (remainingDelta >= KV_WRITE_MIN_DELTA || resetChanged || enoughTime) {
+    lastKvWriteRemaining = remaining;
+    lastKvWriteTime = now;
+    await kv.put(
+      TWITCH_BUDGET_KEY,
+      JSON.stringify({ remaining, resetAt } satisfies TwitchBudget),
+      { expirationTtl: 120 },
+    );
+  }
 }
 
 export async function checkTwitchBudget(env: {
