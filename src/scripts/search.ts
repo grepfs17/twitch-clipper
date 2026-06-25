@@ -129,7 +129,8 @@ async function fetchWindow(
   pageDelay = 100,
   pageCap: number | null = null,
 ): Promise<{ clips: TwitchClip[]; failed: boolean; reason?: string }> {
-  const maxClips = pageCap ?? parseInt(import.meta.env.PUBLIC_MAX_CLIPS || "50000", 10);
+  const maxClips =
+    pageCap ?? parseInt(import.meta.env.PUBLIC_MAX_CLIPS || "50000", 10);
   const result: TwitchClip[] = [];
   let cursor = "";
   let failed = false;
@@ -286,9 +287,10 @@ async function loadAllClips() {
 
     if (els.progressBar) els.progressBar.style.width = "0%";
     if (els.progressLabel)
-      els.progressLabel.textContent = attempt === 0
-        ? "Loading all clips…"
-        : `Retrying ${pendingWindows.length} window${pendingWindows.length > 1 ? "s" : ""} (attempt ${attempt + 1}/${MAX_AUTO_RETRIES + 1})…`;
+      els.progressLabel.textContent =
+        attempt === 0
+          ? "Loading all clips…"
+          : `Retrying ${pendingWindows.length} window${pendingWindows.length > 1 ? "s" : ""} (attempt ${attempt + 1}/${MAX_AUTO_RETRIES + 1})…`;
 
     const { clips, failedWindows } = await runLoadAllWindowPool(range, els);
     totalNewClips.push(...clips);
@@ -307,12 +309,7 @@ async function loadAllClips() {
     attempt++;
   }
 
-  finalizeLoadAll(
-    totalNewClips,
-    lastFailedCount,
-    pendingWindows.length,
-    els,
-  );
+  finalizeLoadAll(totalNewClips, lastFailedCount, pendingWindows.length, els);
   await saveAndAnnounceCache(currentChannel);
   setTimeout(() => els.progressArea?.classList.add("hidden"), 2000);
 }
@@ -364,7 +361,11 @@ async function runLoadAllWindowPool(
     if (els.progressStats) {
       const elapsed = Math.round((Date.now() - startTime) / 1000);
       const left = totalWindows - windowsProcessed;
-      els.progressStats.textContent = formatEta(elapsed, left, windowsProcessed);
+      els.progressStats.textContent = formatEta(
+        elapsed,
+        left,
+        windowsProcessed,
+      );
     }
     if (elements.loaderText) {
       elements.loaderText.textContent = `Loading window ${windowsProcessed}/${totalWindows} — ${(totalClipsBefore + backgroundClips.length).toLocaleString()} clips`;
@@ -435,7 +436,11 @@ async function saveAndAnnounceCache(channel: string) {
   }
 }
 
-function formatEta(elapsedSec: number, left: number, processed: number): string {
+function formatEta(
+  elapsedSec: number,
+  left: number,
+  processed: number,
+): string {
   if (processed <= 1 || elapsedSec <= 3) {
     return `${left} window${left !== 1 ? "s" : ""}`;
   }
@@ -544,14 +549,14 @@ async function fetchInitialBatch(
   channel: string,
   range: string,
 ): Promise<{ firstBatch: TwitchClip[]; queuedWindows: TimeWindow[] }> {
-  // Cap the initial render to 1 page (100 clips) for a snappy first
-  // paint. The remaining windows stay queued behind the "Load all
+  // Cap the initial render to 1 page (100 clips) per fetch for a snappy
+  // first paint. The remaining windows stay queued behind the "Load all
   // clips" button. The cached path skips this entirely.
   const INITIAL_PAGE_CAP = 100;
 
   if (range === "all") {
-    // Unbounded → Twitch returns by view count: user sees top clips instantly
-    const { clips: firstBatch } = await fetchTopClips(
+    // Fetch top (most viewed) and latest clips in parallel
+    const topPromise = fetchTopClips(
       channel,
       (n) => {
         if (elements.loaderText) {
@@ -560,6 +565,38 @@ async function fetchInitialBatch(
       },
       INITIAL_PAGE_CAP,
     );
+
+    // Latest clips: use a recent 30-day window
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const latestWindow: TimeWindow = {
+      startedAt: thirtyDaysAgo.toISOString(),
+      endedAt: now.toISOString(),
+    };
+    const latestPromise = fetchWindow(
+      channel,
+      "30d",
+      latestWindow,
+      undefined,
+      100,
+      INITIAL_PAGE_CAP,
+    );
+
+    const [topResult, latestResult] = await Promise.all([
+      topPromise,
+      latestPromise,
+    ]);
+
+    // Deduplicate: start with top clips, then append unique latest clips
+    const seen = new Set(topResult.clips.map((c) => c.id));
+    const uniqueLatest = latestResult.clips.filter((c) => {
+      if (seen.has(c.id)) return false;
+      seen.add(c.id);
+      return true;
+    });
+
+    const firstBatch = [...topResult.clips, ...uniqueLatest];
+
     // Queue ALL time windows so "Load all clips" covers full history
     return { firstBatch, queuedWindows: buildWindows("all") };
   }
