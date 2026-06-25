@@ -978,27 +978,32 @@ input[type="text"]#channelInput::placeholder {
     color: var(--amber-dim);
 }
 
-/* GitHub Link */
+/* Top Links */
 
-.github-link {
+.top-links {
     position: fixed;
     top: 1rem;
     right: 1rem;
     z-index: 600;
     display: flex;
+    gap: 0.5rem;
+}
+
+.github-link {
+    display: flex;
     align-items: center;
     gap: 0.4rem;
     padding: 0.4rem 0.75rem;
-    border: 1px solid var(--border);
-    background: var(--bg-2);
-    color: var(--text-dim);
+    border: 1px solid var(--amber);
+    background: transparent;
+    color: var(--amber);
     font-size: 0.75rem;
-    transition: color 0.2s, border-color 0.2s;
+    transition: background 0.2s, color 0.2s;
 }
 
 .github-link:hover {
-    color: var(--amber);
-    border-color: var(--amber-dim);
+    background: var(--amber);
+    color: var(--bg);
 }
 
 /* Footer */
@@ -1780,6 +1785,14 @@ input[type="text"]#channelInput::placeholder {
     letter-spacing: 0.18em;
 }
 
+.fav-modal-content .modal-close {
+    top: 0;
+    right: 0;
+    height: 1.8rem;
+    border-left: 1px solid var(--border);
+    border-bottom: none;
+}
+
 .fav-modal-body {
     padding: 1rem;
     max-height: calc(85vh - 2.5rem);
@@ -2061,6 +2074,12 @@ input[type="text"]#channelInput::placeholder {
         gap: 0.3rem;
     }
 
+    .top-links {
+        position: static;
+        justify-content: center;
+        padding: 1rem 0;
+    }
+
     .clip-url-bar {
         flex-wrap: wrap;
         gap: 0.4rem;
@@ -2117,10 +2136,25 @@ input[type="text"]#channelInput::placeholder {
         position: static;
     }
 
+    .toolbar::before {
+        position: static;
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+
     .filters-group {
         flex-direction: column;
         width: 100%;
         gap: 0.75rem;
+    }
+
+    .filter-item {
+        width: 100%;
+        text-align: left;
+    }
+
+    .filter-item label {
+        text-align: left;
     }
 
     .filter-item .autocomplete-wrapper,
