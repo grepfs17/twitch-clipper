@@ -7,16 +7,6 @@
     "binding": "ASSETS",
     "directory": "./dist"
   },
-  "kv_namespaces": [
-    {
-      "binding": "RATE_LIMIT_KV",
-      "id": "e4aaac15dcee4a21bb6c895cd3ff9dc1"
-    },
-    {
-      "binding": "CLIP_CACHE_KV",
-      "id": "7a27ee73731e466b96c3f155ba89cf53"
-    }
-  ],
   "routes": [
     {
       "pattern": "twitchclipexplorer.grepfs.xyz",

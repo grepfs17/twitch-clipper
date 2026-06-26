@@ -379,7 +379,13 @@ async function runLoadAllWindowPool(
     3,
     windows,
     async (win) => {
-      const { clips, failed } = await fetchWindow(currentChannel, range, win);
+      const { clips, failed } = await fetchWindow(
+        currentChannel,
+        range,
+        win,
+        undefined,
+        300,
+      );
       if (clips.length > 0) backgroundClips.push(...clips);
       if (failed) {
         // Re-queue the window in pendingWindows for the auto-retry loop

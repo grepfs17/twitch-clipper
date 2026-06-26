@@ -57,7 +57,7 @@ function buildClipCard(clip: TwitchClip): HTMLDivElement {
             <div class="clip-meta">
                 <span class="clip-creator">${escapeHtml(clip.creator_name)}</span>
                 <span class="meta-dot"></span>
-                <span class="clip-game">${escapeHtml(clip.game_name)}</span>
+                <span class="clip-game">${escapeHtml(clip.game_name || "")}</span>
                 <span class="meta-dot"></span>
                 <span class="clip-date">${date}</span>
             </div>
