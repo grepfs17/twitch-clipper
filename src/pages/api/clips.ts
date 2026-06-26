@@ -16,8 +16,11 @@ export const GET: APIRoute = async ({ request }: any) => {
   if (!channel) return json({ error: "Channel name is required" }, 400);
 
   try {
+    console.log("TWITCH_CLIENT_ID set:", !!TWITCH_CLIENT_ID);
     const token = await getAccessToken();
+    console.log("Got access token:", token?.substring(0, 10) + "...");
     const broadcasterId = await getBroadcasterId(channel, token);
+    console.log("Got broadcaster ID:", broadcasterId);
     if (!broadcasterId) return json({ error: "Channel not found" }, 404);
 
     const twitchUrl = new URL("https://api.twitch.tv/helix/clips");
@@ -46,6 +49,7 @@ export const GET: APIRoute = async ({ request }: any) => {
 
     if (!twitchRes.ok) {
       const body = await twitchRes.text();
+      console.error("Twitch API error:", twitchRes.status, body);
       return new Response(body, { status: twitchRes.status, headers });
     }
 

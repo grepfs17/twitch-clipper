@@ -35,6 +35,7 @@ export async function getAccessToken() {
 
   if (!response.ok) {
     const error = await response.json();
+    console.error("Failed to get Twitch access token:", response.status, error);
     throw new Error(`Failed to get access token: ${JSON.stringify(error)}`);
   }
 
@@ -61,6 +62,8 @@ export async function getBroadcasterId(login: string, token: string) {
   );
 
   if (!response.ok) {
+    const body = await response.text();
+    console.error("Failed to fetch user:", response.status, body);
     throw new Error("Failed to fetch user");
   }
 
