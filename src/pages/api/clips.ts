@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { TWITCH_CLIENT_ID } from "astro:env/server";
 import { getAccessToken, getBroadcasterId, getGames } from "../../lib/twitch";
 import { isSameOrigin, json } from "../../lib/utils";
 
@@ -28,7 +29,7 @@ export const GET: APIRoute = async ({ request }: any) => {
 
     const twitchRes = await fetch(twitchUrl.toString(), {
       headers: {
-        "Client-ID": import.meta.env.TWITCH_CLIENT_ID!,
+        "Client-ID": TWITCH_CLIENT_ID!,
         Authorization: `Bearer ${token}`,
       },
     });
