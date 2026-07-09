@@ -692,6 +692,52 @@ export function initSearch() {
 
     await doFreshSearch(channel, range);
   });
+
+  elements.cacheFetchNew?.addEventListener("click", async () => {
+    if (!currentChannel) return;
+
+    const cached = await loadCache(currentChannel);
+    if (!cached) return;
+
+    const savedDate = new Date(cached.savedAt);
+    const formatted = savedDate.toLocaleDateString(undefined, {
+      month: "short", day: "numeric", year: "numeric",
+      hour: "2-digit", minute: "2-digit",
+    });
+
+    hideCacheIndicator();
+    elements.loader?.classList.remove("hidden");
+    if (elements.loaderText)
+      elements.loaderText.textContent = `Fetching new clips since ${formatted}…`;
+    elements.emptyState?.classList.add("hidden");
+
+    const { clips: newClips, failed, reason } = await fetchWindow(
+      currentChannel,
+      "all",
+      { startedAt: cached.savedAt, endedAt: new Date().toISOString() },
+    );
+
+    elements.loader?.classList.add("hidden");
+
+    if (failed) {
+      terminalToast(`Fetching new clips failed: ${reason || "Unknown error"}`);
+      showCacheIndicator(cached.savedAt);
+      return;
+    }
+
+    if (newClips.length === 0) {
+      terminalToast("No new clips found since the cache was saved.");
+      showCacheIndicator(cached.savedAt);
+      return;
+    }
+
+    appendClips(newClips);
+    updateCategories();
+    applyFilters();
+
+    await saveAndAnnounceCache(currentChannel);
+    showCacheIndicator(new Date().toISOString());
+  });
 }
 
 // @internal — exported for unit tests. Not part of the public API.

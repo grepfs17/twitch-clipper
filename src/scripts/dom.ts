@@ -41,6 +41,7 @@ type ElementMap = {
   cacheIndicator: HTMLElement | null;
   cacheText: HTMLSpanElement | null;
   cacheRefresh: HTMLButtonElement | null;
+  cacheFetchNew: HTMLButtonElement | null;
 
   favoritesModal: HTMLElement | null;
   favoritesBtn: HTMLButtonElement | null;
@@ -97,6 +98,7 @@ const IDS: { [K in keyof ElementMap]: string } = {
   cacheIndicator: "cacheIndicator",
   cacheText: "cacheText",
   cacheRefresh: "cacheRefresh",
+  cacheFetchNew: "cacheFetchNew",
 
   favoritesModal: "favoritesModal",
   favoritesBtn: "favoritesBtn",
