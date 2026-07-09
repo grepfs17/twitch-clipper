@@ -709,6 +709,9 @@ export function initSearch() {
       hour: "2-digit", minute: "2-digit",
     });
 
+    const btn = elements.cacheFetchNew;
+    if (btn) btn.disabled = true;
+
     hideCacheIndicator();
     elements.loader?.classList.remove("hidden");
     if (elements.loaderText)
@@ -719,9 +722,14 @@ export function initSearch() {
       currentChannel,
       "all",
       { startedAt: cached.savedAt, endedAt: new Date().toISOString() },
+      (n) => {
+        if (elements.loaderText)
+          elements.loaderText.textContent = `Fetching new clips since ${formatted}… ${n} found`;
+      },
     );
 
     elements.loader?.classList.add("hidden");
+    if (btn) btn.disabled = false;
 
     if (failed) {
       terminalToast(`Fetching new clips failed: ${reason || "Unknown error"}`);
@@ -741,6 +749,7 @@ export function initSearch() {
 
     await saveAndAnnounceCache(currentChannel);
     showCacheIndicator(new Date().toISOString());
+    terminalToast(`Added ${newClips.length.toLocaleString()} new clip${newClips.length !== 1 ? "s" : ""} to cache.`);
   });
 }
 
