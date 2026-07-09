@@ -69,6 +69,7 @@ export function initRecent() {
       removeRecent(channel);
     } else if (target.classList.contains("recent-channel")) {
       if (elements.channelInput) elements.channelInput.value = channel;
+      elements.searchBtn?.setAttribute("data-skip-cache-confirm", "1");
       elements.searchBtn?.click();
     }
   });

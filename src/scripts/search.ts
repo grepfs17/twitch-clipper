@@ -464,8 +464,10 @@ async function handleSearch() {
   resetSearchUI();
 
   const range = elements.rangeFilter?.value || "all";
+  const skipConfirm = elements.searchBtn?.hasAttribute("data-skip-cache-confirm");
+  elements.searchBtn?.removeAttribute("data-skip-cache-confirm");
 
-  if (range === "all" && (await loadFromCacheIfPresent(channel))) return;
+  if (range === "all" && (await loadFromCacheIfPresent(channel, skipConfirm))) return;
 
   await doFreshSearch(channel, range);
 }
@@ -519,7 +521,7 @@ function formatCacheAge(min: number): string {
   return `${Math.round(min / 1440)}d ago`;
 }
 
-async function loadFromCacheIfPresent(channel: string): Promise<boolean> {
+async function loadFromCacheIfPresent(channel: string, skipConfirm = false): Promise<boolean> {
   const cached = await loadCache(channel);
   if (!cached) return false;
 
@@ -530,15 +532,17 @@ async function loadFromCacheIfPresent(channel: string): Promise<boolean> {
 
   elements.loader?.classList.add("hidden");
 
-  const useCached = await terminalConfirm(
-    `Found ${cached.clips.length.toLocaleString()} cached clips for ${channel} (saved ${ageLabel}). Load from cache?`,
-    "USE CACHE",
-    "FETCH FRESH",
-  );
+  if (!skipConfirm) {
+    const useCached = await terminalConfirm(
+      `Found ${cached.clips.length.toLocaleString()} cached clips for ${channel} (saved ${ageLabel}). Load from cache?`,
+      "USE CACHE",
+      "FETCH FRESH",
+    );
 
-  if (!useCached) {
-    elements.loader?.classList.remove("hidden");
-    return false;
+    if (!useCached) {
+      elements.loader?.classList.remove("hidden");
+      return false;
+    }
   }
 
   addRecent(channel);
