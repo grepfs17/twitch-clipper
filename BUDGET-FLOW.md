@@ -1,4 +1,4 @@
-# Twitch Budget and KV Throttling
+# Twitch Budget and Rate Limiting
 
 ## The Problem
 
@@ -9,39 +9,25 @@ careful management, we would hit the rate limit almost immediately.
 
 ## How It Works
 
-There are three layers of protection, from the outermost (server) to the
-innermost (client).
+### Layer 1: Server-Side Rate Limiting (in-memory, per-isolate)
 
-### Layer 1: Server-Side Budget Gate
+A lightweight in-memory rate limiter (`checkRateLimit` in `src/lib/utils.ts:34`)
+covers the auxiliary endpoints:
 
-Every request to `/api/clips` goes through `checkTwitchBudget()` before
-hitting Twitch. This function reads a shared budget counter from Cloudflare
-Workers KV (key: `twitch:budget`). If the remaining count is at or below 20,
-the request is rejected with a 429 response and a retry-after hint.
+| Endpoint | Limit |
+|----------|-------|
+| `/api/clips/lookup` | 120 req/min |
+| `/api/clips/formats` | 120 req/min |
+| `/api/clips/download` | 60 req/min |
 
-This is the authoritative defense. Even if the client misbehaves, the server
-won't let requests through when the budget is exhausted.
+The `/api/clips` endpoint does **not** have server-side rate limiting.
+Instead, it acts as a transparent proxy, forwarding Twitch's own rate-limit
+response headers (`Ratelimit-Remaining`, `Ratelimit-Limit`, `Ratelimit-Reset`)
+back to the client via `X-Twitch-Ratelimit-*` headers.
 
-### Layer 2: KV Write Throttling
+This means the primary budget enforcement is delegated to the client.
 
-After each successful Twitch API call, the server updates the budget counter
-via `writeTwitchBudget()`. During "Load all clips", this would normally
-trigger a KV write on every single page fetch across all concurrent windows.
-That's a lot of writes hitting Cloudflare KV in a short time.
-
-To prevent this, writes are throttled. The in-memory budget value is always
-updated immediately (so decisions within the same Worker isolate are
-accurate), but the KV store is only updated when at least one of these
-conditions is met:
-
-- The remaining count dropped by 50 or more since the last write.
-- The reset timestamp changed (meaning Twitch started a new rate-limit
-  minute).
-- At least 10 seconds have passed since the last write.
-
-This reduces KV write volume while keeping the shared budget counter accurate enough for safe gating.
-
-### Layer 3: Client Self-Throttling
+### Layer 2: Client Self-Throttling
 
 The client reads the `X-Twitch-Ratelimit-Remaining` header from every
 response and adjusts its request pacing accordingly:
@@ -53,9 +39,17 @@ response and adjusts its request pacing accordingly:
 | 31-100    | 500ms               |
 | <= 30     | 1500ms              |
 
-If a 429 is received, the client waits for the `Retry-After` duration
-before retrying. This means the client backs off before the server ever
-has to reject a request.
+When the `Ratelimit-Reset` timestamp is near (< 60s away), the client
+stretches the delay to avoid crossing the reset boundary mid-fetch.
+
+If a 429 is received (from either Twitch or the server), the client waits
+for the `Retry-After` duration before retrying.
+
+### Layer 3: All API Routes are Same-Origin Only
+
+Every server-side route calls `isSameOrigin()` before processing. Requests
+from other origins receive a 403. This prevents abuse from non-app sources
+consuming the app's Twitch budget.
 
 ## The "Load all clips" Flow
 
@@ -65,8 +59,8 @@ When the user clicks "Load all clips":
 2. Up to 3 windows are fetched concurrently via `asyncPool`.
 3. Each window paginates through its time range, fetching 100 clips per
    page.
-4. Each page fetch goes through the server-side budget gate, hits the
-   Twitch API, and updates the budget counter.
+4. Each page fetch goes through the server proxy directly to Twitch.
+   Twitch's rate-limit headers are forwarded back to the client.
 5. The client self-throttles based on the remaining budget.
 6. Failed windows (due to rate limits or errors) are re-queued and
    retried up to 3 times with a 15-second cooldown between attempts.
@@ -86,14 +80,16 @@ When the user searches for a channel with "all" time range selected:
 For other time ranges (24h, 7d, 30d), only the first window is fetched
 initially, with the rest queued.
 
-## KV Namespaces
+## Storage
 
-The app uses two Cloudflare KV namespaces:
+There are no KV namespaces currently bound. All storage is client-side:
 
-- `RATE_LIMIT_KV` -- Stores the shared Twitch budget counter and per-IP
-  rate limit counters for non-clips endpoints.
-- `CLIP_CACHE_KV` -- Caches fetched clip pages to avoid re-fetching on
-  subsequent searches for the same channel.
+- **IndexedDB** — Full clip library cache per channel (`twitch-clip-explorer` /
+  `channels` store). Supports save, load, clear, and incremental "Fetch New".
+- **localStorage** — Favorites (`tc-favorites`), recent searches (`tc-recent`),
+  and per-clip notes (`tc-notes`).
+- **In-memory (server)** — Rate-limit counters per client IP, per Worker
+  isolate. Ephemeral and not shared across isolates.
 
 ## Concurrency Tuning
 
