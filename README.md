@@ -49,7 +49,7 @@ pnpm dev
 pnpm dev
 ```
 
-### Deploy to Cloudflare Pages
+### Deploy to Cloudflare Workers
 
 ```
 pnpm build
@@ -67,21 +67,22 @@ npx wrangler deploy
 
 ```
 src/
+  env.d.ts              TypeScript declarations for PUBLIC_MAX_CLIPS env var
   layouts/
     Layout.astro        Base HTML layout with meta tags, fonts, and global styles
   lib/
     twitch.ts           Twitch Helix API client (OAuth, clips, games endpoints)
     twitch-gql.ts       Twitch GQL API client (clip metadata, playback tokens)
-    utils.ts            Shared utilities (rate limiting, budget tracking, helpers)
+    utils.ts            Shared utilities (rate limiting, same-origin guard, JSON helpers)
   pages/
+    index.astro         Main page with search UI and clip grid
+    sitemap.xml.ts      Dynamic sitemap generator
     api/
       clips.ts          Proxy endpoint for fetching clips from Twitch API
       clips/
         download.ts     Server-side download handler via GQL streaming proxy
         formats.ts      Clip quality/format listing via GQL
         lookup.ts       Clip lookup by URL via GQL
-    index.astro         Main page with search UI and clip grid
-    sitemap.xml.ts      Dynamic sitemap generator
   scripts/
     index.ts            Application entry point, initializes all modules
     api.ts              HTTP client for API proxy calls
@@ -99,6 +100,11 @@ src/
     search.ts           Search orchestration, time window pagination, cache handling
     types.ts            Shared TypeScript types
     typewriter.ts       Typewriter animation for the hero heading
+    __tests__/
+      search.test.ts    Unit tests for search helpers
+      modal.test.ts     Unit tests for modal utilities
+      favorites.test.ts Unit tests for favorites system
+      categories.test.ts Unit tests for categories
   styles/
     index.css           All styles
 ```
@@ -107,9 +113,17 @@ src/
 
 - Search any Twitch channel and retrieve all available clips
 - Cache full clip libraries in IndexedDB for faster subsequent searches
-- Filter clips by game category and sort by views, date, or oldest
+- "Fetch New" button for incremental cache updates since last save
+- "Load all clips" with multi-window concurrent fetching and progress bar
+- Filter clips by game category and text search (title, creator, game)
+- Sort by views, latest date, or oldest date
 - Lazy-loaded clip grid with infinite scroll
 - Clip preview modal with Twitch embed player
-- Download clips in multiple qualities via Twitch GQL API
-- Recent searches stored in localStorage
-- Fixed progress bar for long-running full-library loads
+- Download clips in multiple qualities via Twitch GQL API (landscape and portrait)
+- Favorites system with channel > game > clip tree view (localStorage)
+- Recent searches history (localStorage)
+- Per-clip notes (localStorage)
+- Paste a clip URL to open it directly
+- Typewriter animation in the hero heading
+- Mobile responsive design
+- Rate limiting and same-origin protection on all API routes
