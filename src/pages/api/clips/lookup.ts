@@ -24,7 +24,7 @@ async function hydrateGameName(clip: TwitchClip, token: string) {
 export const GET: APIRoute = async ({ request }: any) => {
   if (!isSameOrigin(request)) return json({ error: "Forbidden" }, 403);
 
-  const rateLimit = await checkRateLimit(request, env, {
+  const rateLimit = checkRateLimit(request, env, {
     maxRequests: 120,
     windowSec: 60,
     scope: new URL(request.url).pathname,
