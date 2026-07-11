@@ -1,7 +1,8 @@
 {
   "name": "twitch-clipper",
   "type": "module",
-  "version": "0.0.1",
+  "version": "0.5.0",
+  "license": "AGPL-3.0-only",
   "packageManager": "pnpm@10.11.1",
   "engines": {
     "node": ">=22.12.0"
